@@ -1,6 +1,0 @@
-#define PEOPLEBOX_ID    "lab_physycom"
-#define ROI_ID          "nico_desktop"
-#define DETECTION_CROWD "crowd"
-#define DETECTION_TRACK "tracking"
-#define SW_VER_CROWD    "100"
-#define SW_VER_TRACK    "200"
