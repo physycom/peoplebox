@@ -44,4 +44,4 @@ libdarknet*
 darkphysycom
 darkcrowd
 darktrack
-physycom/peoplebox_params.h
+src/peoplebox_params.h
