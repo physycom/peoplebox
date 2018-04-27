@@ -1,32 +1,47 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
 *.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
+*.dSYM
+*.csv
 *.out
-*.app
+*.png
+*.jpg
+*.pyc
+old/
+mnist/
+data/
+caffe/
+grasp/
+images/
+opencv/
+convnet/
+decaf/
+submission/
+cfg/
+darknet.exe
+libdarknet.a
+libdarknet.so
+darknet.lib
+darknet.dll
+.fuse*
+
+# OS Generated #
+.DS_Store*
+ehthumbs.db
+Icon?
+Thumbs.db
+*.swp
+
+log.txt
+
+build/
+build_debug/
+bin/
+output/
+.vs/
+.vscode/
+*.weights
+libdarknet*
+
+darkphysycom
+darkcrowd
+darktrack
+physycom/peoplebox_params.h
