@@ -5,6 +5,6 @@ New-Item -Path .\build -ItemType directory -Force
 Set-Location build
 
 cmake -G "Ninja" "-DCMAKE_TOOLCHAIN_FILE=$env:WORKSPACE\vcpkg_opencv2\scripts\buildsystems\vcpkg.cmake" "-DVCPKG_TARGET_TRIPLET=$env:VCPKG_DEFAULT_TRIPLET" "-DCMAKE_BUILD_TYPE=Release" ..
-cmake --build . --config Release
+cmake --build . --config Release --target install
 
 Set-Location ..
