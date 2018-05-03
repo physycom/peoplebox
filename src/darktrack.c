@@ -140,7 +140,7 @@ void* detect_in_thread(void* ptr)
   if (frame_num % MAX_FRAME_INFO_TO_STORE == 0) {
     sprintf(json_name, "output/track.%ld.json", tnow_t);
     FILE* info_json = fopen(json_name, "w");
-    if(!info_json){
+    if(info_json){
       fprintf(stderr, "Cannot create info json\n");
       exit(ERR_NO_INFO_JSON);
     }

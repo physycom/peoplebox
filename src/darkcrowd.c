@@ -129,6 +129,10 @@ void* detect_in_thread(void* ptr)
   if (frame_num % MAX_FRAME_INFO_TO_STORE == 0) {
     sprintf(json_name, "output/crowd.%ld.json", tnow_t);
     FILE* info_json = fopen(json_name, "w");
+    if(info_json){
+      fprintf(stderr, "Cannot create info json\n");
+      exit(ERR_NO_INFO_JSON);
+    }
     fprintf(info_json, "{\n");
     for (i = 0; i < MAX_FRAME_INFO_TO_STORE; ++i) {
       fprintf(info_json, "\t\"frame_%d\" : {\n", infos[i].frame_number);
