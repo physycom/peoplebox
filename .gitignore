@@ -47,3 +47,5 @@ darkcrowd*
 darktrack*
 dump_stream*
 src/peoplebox_params.h
+
+*.avi
