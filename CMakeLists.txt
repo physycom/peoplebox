@@ -20,8 +20,8 @@ list(APPEND physycom_exe
   darktrack
 )
 
-list(APPEND darkcrowd_src ${CMAKE_SOURCE_DIR}/src/darkcrowd.c)
-list(APPEND darktrack_src ${CMAKE_SOURCE_DIR}/src/darktrack.c)
+list(APPEND darkcrowd_src   ${CMAKE_SOURCE_DIR}/src/darkcrowd.c)
+list(APPEND darktrack_src   ${CMAKE_SOURCE_DIR}/src/darktrack.c)
 list(APPEND physycom_src
   darkcrowd_src
   darktrack_src
@@ -65,3 +65,10 @@ foreach(${exe} IN LISTS ${physycom_exe})
 endforeach()
 
 install(TARGETS ${physycom_exe} DESTINATION ${CMAKE_SOURCE_DIR})
+
+# tools
+if(OpenCV_FOUND)
+  add_executable(dump_stream ${CMAKE_SOURCE_DIR}/src/dump_stream.cpp)
+  target_link_libraries(dump_stream ${OpenCV_LIBRARIES})
+  install(TARGETS dump_stream DESTINATION ${CMAKE_SOURCE_DIR})
+endif()
