@@ -28,9 +28,10 @@ double now_time;
 
 /* physycom add */
 #define MAX_FRAME_INFO_TO_STORE 50
-#define MAX_LINE_LEN 20
-#define ERR_NO_FILE 111
-#define ERR_NO_STREAM 222
+#define MAX_LINE_LEN            20
+#define ERR_NO_FILE             111
+#define ERR_NO_STREAM           222
+#define ERR_NO_INFO_JSON        333
 
 #define PUNCTILIOUS
 
