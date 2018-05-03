@@ -59,7 +59,10 @@ void* fetch_in_thread(void* ptr)
   int status = fill_image_from_stream(cap, buff[buff_index]);
   letterbox_image_into(buff[buff_index], net->w, net->h, buff_letter[buff_index]);
   if (status == 0)
+  {
+    fprintf(stderr, "fill_image_from_stream() failed to load frame\n");
     demo_done = 1;
+  }
   return 0;
 }
 
@@ -124,7 +127,7 @@ void* detect_in_thread(void* ptr)
   infos[infos_index].frame_number = frame_num;
   ++infos_index;
   if (frame_num % MAX_FRAME_INFO_TO_STORE == 0) {
-    sprintf(json_name, "output/frame_info.%ld.json", tnow_t);
+    sprintf(json_name, "output/crowd.%ld.json", tnow_t);
     FILE* info_json = fopen(json_name, "w");
     fprintf(info_json, "{\n");
     for (i = 0; i < MAX_FRAME_INFO_TO_STORE; ++i) {
@@ -163,25 +166,6 @@ int main()
 
   /* prepare frame info array */
   infos = (frame_info*)malloc(MAX_FRAME_INFO_TO_STORE * sizeof(frame_info));
-
-  /* PARSE FILE LINE BY LINE */
-  /*
-  char **lines, line[MAX_LINE_LEN];
-  int line_num=0;
-  FILE *infile = fopen(name_list, "r");
-  while( fgets(line, MAX_LINE_LEN, infile) != NULL ) ++line_num;
-  rewind(infile);
-  printf("Line number : %d\n", line_num);
-  lines = (char**) malloc(line_num*sizeof(char*));
-  for(i=0; i<line_num; ++i)
-  {
-    lines[i] = (char*) malloc(MAX_LINE_LEN*sizeof(char));
-    fgets(lines[i], MAX_LINE_LEN, infile);
-    lines[i][strlen(lines[i])-1] = '\0';
-  }
-  for(i=0; i<line_num; ++i) printf("Line : %s\n", lines[i]);
-  exit(222);
-*/
 
   FILE* file = fopen(name_list, "r");
   if (!file) {

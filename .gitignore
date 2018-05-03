@@ -41,9 +41,12 @@ output/
 *.weights
 libdarknet*
 darknet_lib.*
+darknet_cuda.*
 
 darkphysycom*
 darkcrowd*
 darktrack*
 dump_stream*
 src/peoplebox_params.h
+
+*.avi

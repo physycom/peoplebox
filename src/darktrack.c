@@ -43,11 +43,14 @@ static int frame_num;
 
 static int infos_index;
 
+#define MAX_PERSON_NUM 100
 typedef struct frame_info {
   double timestamp;
-  unsigned int person_number, frame_number;
+  float x[MAX_PERSON_NUM], y[MAX_PERSON_NUM];
+  //float w[MAX_PERSON_NUM], h[MAX_PERSON_NUM], p[MAX_PERSON_NUM];
+  int person_number, frame_number;
 } frame_info;
-static frame_info* infos;
+static frame_info *infos;
 
 static double tnow;
 static time_t tnow_t;
@@ -60,7 +63,10 @@ void* fetch_in_thread(void* ptr)
   int status = fill_image_from_stream(cap, buff[buff_index]);
   letterbox_image_into(buff[buff_index], net->w, net->h, buff_letter[buff_index]);
   if (status == 0)
+  {
+    fprintf(stderr, "fill_image_from_stream() failed to load frame\n");
     demo_done = 1;
+  }
   return 0;
 }
 
@@ -104,7 +110,14 @@ void* detect_in_thread(void* ptr)
   /* people tracking */
   for (i = 0; i < nboxes; ++i)
     if (dets[i].prob[person_name_index] > demo_thresh)
+    {
+      infos[infos_index].x[person_num] = dets[i].bbox.x;
+      infos[infos_index].y[person_num] = dets[i].bbox.y;
+//      infos[infos_index].w[person_num] = dets[i].bbox.w;
+//      infos[infos_index].h[person_num] = dets[i].bbox.h;
+//      infos[infos_index].p[person_num] = dets[i].prob[person_name_index];
       ++person_num;
+    }
 
   ++frame_num;
 
@@ -125,7 +138,7 @@ void* detect_in_thread(void* ptr)
   infos[infos_index].frame_number = frame_num;
   ++infos_index;
   if (frame_num % MAX_FRAME_INFO_TO_STORE == 0) {
-    sprintf(json_name, "output/frame_info.%ld.json", tnow_t);
+    sprintf(json_name, "output/track.%ld.json", tnow_t);
     FILE* info_json = fopen(json_name, "w");
     if(!info_json){
       fprintf(stderr, "Cannot create info json\n");
@@ -138,7 +151,18 @@ void* detect_in_thread(void* ptr)
       fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", PEOPLEBOX_ID);
       fprintf(info_json, "\t\t\"detection\" : \"%s\",\n", DETECTION_TRACK);
       fprintf(info_json, "\t\t\"sw_ver\" : %s,\n", SW_VER_TRACK);
-      fprintf(info_json, "\t\t\"people_count\" : [{\"id\" : \"%s\", \"count\" : %d}],\n", ROI_ID, infos[i].person_number);
+      if(infos[i].person_number)
+      {
+        fprintf(info_json, "\t\t\"people_x\" : [ ");
+        for(j=0; j<infos[i].person_number-1; ++j) fprintf(info_json, "%.3f, ", infos[i].x[j]); fprintf(info_json, "%.3f ],\n", infos[i].x[j]);
+        fprintf(info_json, "\t\t\"people_y\" : [ ");
+        for(j=0; j<infos[i].person_number-1; ++j) fprintf(info_json, "%.3f, ", infos[i].y[j]); fprintf(info_json, "%.3f ],\n", infos[i].y[j]);
+      }
+      else
+      {
+        fprintf(info_json, "\t\t\"people_x\" : [-1.000],\n");
+        fprintf(info_json, "\t\t\"people_y\" : [-1.000],\n");
+      }
       fprintf(info_json, "\t\t\"diagnostics\" : [{\"id\" : \"coming\", \"value\" : \"soon\"}]\n");
       (i != MAX_FRAME_INFO_TO_STORE - 1) ? fprintf(info_json, "\t},\n") : fprintf(info_json, "\t}\n");
     }
@@ -168,25 +192,6 @@ int main()
 
   /* prepare frame info array */
   infos = (frame_info*)malloc(MAX_FRAME_INFO_TO_STORE * sizeof(frame_info));
-
-  /*
-  // PARSE FILE LINE BY LINE
-  char **lines, line[MAX_LINE_LEN];
-  int line_num=0;
-  FILE *infile = fopen(name_list, "r");
-  while( fgets(line, MAX_LINE_LEN, infile) != NULL ) ++line_num;
-  rewind(infile);
-  printf("Line number : %d\n", line_num);
-  lines = (char**) malloc(line_num*sizeof(char*));
-  for(i=0; i<line_num; ++i)
-  {
-    lines[i] = (char*) malloc(MAX_LINE_LEN*sizeof(char));
-    fgets(lines[i], MAX_LINE_LEN, infile);
-    lines[i][strlen(lines[i])-1] = '\0';
-  }
-  for(i=0; i<line_num; ++i) printf("Line : %s\n", lines[i]);
-  exit(222);
-*/
 
   FILE* file = fopen(name_list, "r");
   if (!file) {
@@ -222,7 +227,6 @@ int main()
 
   printf("video stream: %s\n", filename);
   cap = cvCaptureFromFile(filename);
-  //cap = cvCaptureFromCAM(1);
 
   if (!cap) {
     fprintf(stderr, "cannot connect to video stream.\n");

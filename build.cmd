@@ -1,5 +1,6 @@
+pushd C:\
 call "%PROGRAMFILES(x86)%\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
-
+popd
 rmdir /S /Q build
 mkdir build
 cd build
