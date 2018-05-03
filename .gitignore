@@ -40,9 +40,10 @@ output/
 .vscode/
 *.weights
 libdarknet*
+darknet_lib.*
 
-darkphysycom
-darkcrowd
-darktrack
-dump_stream
+darkphysycom*
+darkcrowd*
+darktrack*
+dump_stream*
 src/peoplebox_params.h
