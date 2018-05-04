@@ -136,7 +136,7 @@ void* detect_in_thread(void* ptr)
     }
     fprintf(info_json, "{\n");
     for (i = 0; i < MAX_FRAME_INFO_TO_STORE; ++i) {
-      fprintf(info_json, "\t\"frame_%d\" : {\n", infos[i].frame_number);
+      fprintf(info_json, "\t\"frame_%04d\" : {\n", infos[i].frame_number);
       fprintf(info_json, "\t\t\"timestamp\" : %.3f,\n", infos[i].timestamp);
       fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", PEOPLEBOX_ID);
       fprintf(info_json, "\t\t\"detection\" : \"%s\",\n", DETECTION_CROWD);
