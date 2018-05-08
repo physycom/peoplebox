@@ -28,10 +28,10 @@ double now_time;
 
 /* physycom add */
 #define MAX_FRAME_INFO_TO_STORE 50
-#define MAX_LINE_LEN            20
-#define ERR_NO_FILE             111
-#define ERR_NO_STREAM           222
-#define ERR_NO_INFO_JSON        333
+#define MAX_LINE_LEN 20
+#define ERR_NO_FILE 111
+#define ERR_NO_STREAM 222
+#define ERR_NO_INFO_JSON 333
 
 #define PUNCTILIOUS
 
@@ -59,8 +59,7 @@ void* fetch_in_thread(void* ptr)
 {
   int status = fill_image_from_stream(cap, buff[buff_index]);
   letterbox_image_into(buff[buff_index], net->w, net->h, buff_letter[buff_index]);
-  if (status == 0)
-  {
+  if (status == 0) {
     fprintf(stderr, "fill_image_from_stream() failed to load frame\n");
     demo_done = 1;
   }
@@ -130,7 +129,7 @@ void* detect_in_thread(void* ptr)
   if (frame_num % MAX_FRAME_INFO_TO_STORE == 0) {
     sprintf(json_name, "output/crowd.%ld.json", tnow_t);
     FILE* info_json = fopen(json_name, "w");
-    if(info_json){
+    if (info_json) {
       fprintf(stderr, "Cannot create info json\n");
       exit(ERR_NO_INFO_JSON);
     }

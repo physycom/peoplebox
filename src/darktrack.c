@@ -27,11 +27,11 @@ double demo_time;
 
 // physycom add
 #define MAX_FRAME_INFO_TO_STORE 50
-#define FRAME_NUMBER_TRACKING   5
-#define MAX_LINE_LEN            20
-#define ERR_NO_FILE             111
-#define ERR_NO_STREAM           222
-#define ERR_NO_INFO_JSON        333
+#define FRAME_NUMBER_TRACKING 5
+#define MAX_LINE_LEN 20
+#define ERR_NO_FILE 111
+#define ERR_NO_STREAM 222
+#define ERR_NO_INFO_JSON 333
 
 #define PUNCTILIOUS
 
@@ -50,7 +50,7 @@ typedef struct frame_info {
   //float w[MAX_PERSON_NUM], h[MAX_PERSON_NUM], p[MAX_PERSON_NUM];
   int person_number, frame_number;
 } frame_info;
-static frame_info *infos;
+static frame_info* infos;
 
 static double tnow;
 static time_t tnow_t;
@@ -62,8 +62,7 @@ void* fetch_in_thread(void* ptr)
 {
   int status = fill_image_from_stream(cap, buff[buff_index]);
   letterbox_image_into(buff[buff_index], net->w, net->h, buff_letter[buff_index]);
-  if (status == 0)
-  {
+  if (status == 0) {
     fprintf(stderr, "fill_image_from_stream() failed to load frame\n");
     demo_done = 1;
   }
@@ -109,13 +108,12 @@ void* detect_in_thread(void* ptr)
 
   /* people tracking */
   for (i = 0; i < nboxes; ++i)
-    if (dets[i].prob[person_name_index] > demo_thresh)
-    {
+    if (dets[i].prob[person_name_index] > demo_thresh) {
       infos[infos_index].x[person_num] = dets[i].bbox.x;
       infos[infos_index].y[person_num] = dets[i].bbox.y;
-//      infos[infos_index].w[person_num] = dets[i].bbox.w;
-//      infos[infos_index].h[person_num] = dets[i].bbox.h;
-//      infos[infos_index].p[person_num] = dets[i].prob[person_name_index];
+      //      infos[infos_index].w[person_num] = dets[i].bbox.w;
+      //      infos[infos_index].h[person_num] = dets[i].bbox.h;
+      //      infos[infos_index].p[person_num] = dets[i].prob[person_name_index];
       ++person_num;
     }
 
@@ -140,7 +138,7 @@ void* detect_in_thread(void* ptr)
   if (frame_num % MAX_FRAME_INFO_TO_STORE == 0) {
     sprintf(json_name, "output/track.%ld.json", tnow_t);
     FILE* info_json = fopen(json_name, "w");
-    if(info_json){
+    if (info_json) {
       fprintf(stderr, "Cannot create info json\n");
       exit(ERR_NO_INFO_JSON);
     }
@@ -151,15 +149,16 @@ void* detect_in_thread(void* ptr)
       fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", PEOPLEBOX_ID);
       fprintf(info_json, "\t\t\"detection\" : \"%s\",\n", DETECTION_TRACK);
       fprintf(info_json, "\t\t\"sw_ver\" : %s,\n", SW_VER_TRACK);
-      if(infos[i].person_number)
-      {
+      if (infos[i].person_number) {
         fprintf(info_json, "\t\t\"people_x\" : [ ");
-        for(j=0; j<infos[i].person_number-1; ++j) fprintf(info_json, "%.3f, ", infos[i].x[j]); fprintf(info_json, "%.3f ],\n", infos[i].x[j]);
+        for (j = 0; j < infos[i].person_number - 1; ++j)
+          fprintf(info_json, "%.3f, ", infos[i].x[j]);
+        fprintf(info_json, "%.3f ],\n", infos[i].x[j]);
         fprintf(info_json, "\t\t\"people_y\" : [ ");
-        for(j=0; j<infos[i].person_number-1; ++j) fprintf(info_json, "%.3f, ", infos[i].y[j]); fprintf(info_json, "%.3f ],\n", infos[i].y[j]);
-      }
-      else
-      {
+        for (j = 0; j < infos[i].person_number - 1; ++j)
+          fprintf(info_json, "%.3f, ", infos[i].y[j]);
+        fprintf(info_json, "%.3f ],\n", infos[i].y[j]);
+      } else {
         fprintf(info_json, "\t\t\"people_x\" : [-1.000],\n");
         fprintf(info_json, "\t\t\"people_y\" : [-1.000],\n");
       }
