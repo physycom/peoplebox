@@ -19,6 +19,7 @@ cfg/
 darknet.exe
 libdarknet.a
 libdarknet.so
+libdarknet_lib.dylib
 darknet.lib
 darknet.dll
 .fuse*
@@ -39,14 +40,22 @@ output/
 .vs/
 .vscode/
 *.weights
-libdarknet*
-darknet_lib.*
-darknet_cuda.*
 
-darkphysycom*
-darkcrowd*
-darktrack*
-dump_stream*
+libdarknet.so
+darknet_lib.lib
+darknet_lib.dll
+darknet_cuda.lib
+
+darkcrowd
+darktrack
+darkcrowd_*.exe
+darktrack_*.exe
+darkcrowd_*.c
+darktrack_*.c
+darkcrowd_*
+darktrack_*
+dump_stream
+dump_stream.exe
 src/peoplebox_params.h
 
 *.avi
