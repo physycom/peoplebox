@@ -11,7 +11,7 @@ endif()
 #darknet deps
 include(darknet/CMakeLists.txt)
 
-file(GLOB settings ${CMAKE_SOURCE_DIR}/src/*.cmakevars)
+file(GLOB settings ${CMAKE_SOURCE_DIR}/src/boxvars/*.cmakevars)
 
 foreach(set IN LISTS settings)
   include(${set})
@@ -33,11 +33,8 @@ foreach(set IN LISTS settings)
     darktrack_${tag}_src
   )
 
-  message("****** physycom_${tag}_exe : ${physycom_${tag}_exe}")
   list(LENGTH physycom_${tag}_exe physycom_${tag}_len_)
-  message("****** physycom_${tag}_len1 : ${physycom_${tag}_len_}")
   math(EXPR physycom_${tag}_len ${physycom_${tag}_len_}-1)
-  message("****** physycom_${tag}_len : ${physycom_${tag}_len}")
   foreach(i RANGE ${physycom_${tag}_len})
     list(GET physycom_${tag}_exe ${i} exe)
     list(GET physycom_${tag}_src ${i} src)
