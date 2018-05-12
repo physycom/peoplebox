@@ -11,7 +11,7 @@ int main(int argc, char** argv)
   cv::VideoCapture vcap(argv[1]);
   if (!vcap.isOpened()) {
     std::cout << "Error opening video stream or file" << std::endl;
-    return -1;
+    exit(1);
   }
   int frame_width = vcap.get(CV_CAP_PROP_FRAME_WIDTH);
   int frame_height = vcap.get(CV_CAP_PROP_FRAME_HEIGHT);

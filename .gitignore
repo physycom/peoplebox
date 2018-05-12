@@ -41,6 +41,7 @@ output/
 .vscode/
 *.weights
 
+libdarknet_lib.so
 libdarknet.so
 darknet_lib.lib
 darknet_lib.dll
@@ -60,3 +61,4 @@ save_frame_*
 src/peoplebox_params.h
 
 *.avi
+images/

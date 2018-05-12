@@ -1,2 +1,3 @@
 set(PEOPLEBOX_ID "SCHIAVONI")
 set(IMAGE_DUMP_DT_SEC 5)
+set(IMAGE_FOLDER "images")
