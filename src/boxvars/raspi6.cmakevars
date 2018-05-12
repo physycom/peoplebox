@@ -1,6 +1,2 @@
 set(PEOPLEBOX_ID "CORRER")
-set(ROI_ID "sanmarco_est")
-set(DETECTION_TYPE_CROWD "crowd")
-set(DETECTION_TYPE_TRACK "tracking")
-set(SW_VER_CROWD "100")
-set(SW_VER_TRACK "200")
+set(IMAGE_DUMP_DT_SEC 5)

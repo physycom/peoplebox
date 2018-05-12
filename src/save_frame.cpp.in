@@ -1,0 +1,31 @@
+#include "opencv2/opencv.hpp"
+#include <iostream>
+#include <ctime>
+#include <thread>
+#include <chrono>
+
+int main(int argc, char** argv)
+{
+  if (argc < 2) {
+    std::cerr << "Usage : " << argv[0] << " path/or/url/to/video" << std::endl;
+    exit(1);
+  }
+
+  cv::VideoCapture vcap(argv[1]);
+  if (!vcap.isOpened()) {
+    std::cout << "Error opening video stream or file" << std::endl;
+    return -1;
+  }
+
+  cv::Mat frame;
+  std::string frame_name;
+  for (;;) {
+    vcap >> frame;
+    frame_name = "@PEOPLEBOX_ID@_" + std::to_string(std::time(0)) + ".jpg";
+    imwrite(frame_name,frame);
+    std::this_thread::sleep_for(std::chrono::seconds(@IMAGE_DUMP_DT_SEC@));
+  }
+  vcap.release();
+
+  return 0;
+}

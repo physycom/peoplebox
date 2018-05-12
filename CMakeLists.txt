@@ -11,7 +11,7 @@ endif()
 #darknet deps
 include(darknet/CMakeLists.txt)
 
-file(GLOB settings ${CMAKE_SOURCE_DIR}/src/boxvars/*.cmakevars)
+file(GLOB settings ${CMAKE_SOURCE_DIR}/src/boxvars/jetson*.cmakevars)
 
 foreach(set IN LISTS settings)
   include(${set})
@@ -77,5 +77,16 @@ endforeach()
 if(OpenCV_FOUND)
   add_executable(dump_stream ${CMAKE_SOURCE_DIR}/src/dump_stream.cpp)
   target_link_libraries(dump_stream ${OpenCV_LIBRARIES})
+
+  file(GLOB raspi_settings ${CMAKE_SOURCE_DIR}/src/boxvars/raspi*.cmakevars)
+  foreach(rset IN LISTS raspi_settings)
+    include(${rset})
+    get_filename_component(rtag ${rset} NAME_WE)
+    configure_file(${CMAKE_SOURCE_DIR}/src/save_frame.cpp.in ${CMAKE_SOURCE_DIR}/src/save_frame_${rtag}.cpp)
+    add_executable(save_frame_${rtag} ${CMAKE_SOURCE_DIR}/src/save_frame_${rtag}.cpp)
+    target_link_libraries(save_frame_${rtag} ${OpenCV_LIBRARIES})
+    install(TARGETS save_frame_${rtag} DESTINATION ${CMAKE_SOURCE_DIR})
+  endforeach()
+
   install(TARGETS dump_stream DESTINATION ${CMAKE_SOURCE_DIR})
 endif()
