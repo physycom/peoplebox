@@ -27,13 +27,13 @@ double now_time;
 
 /* physycom add */
 #define MAX_FRAME_INFO_TO_STORE 50
-#define MAX_LINE_LEN            20
-#define ERR_NO_FILE             111
-#define ERR_NO_INPUT_IMAGE      222
-#define ERR_NO_INFO_JSON        333
-#define ERR_WRONG_COMMANDLINE   444
+#define MAX_LINE_LEN 20
+#define ERR_NO_FILE 111
+#define ERR_NO_INPUT_IMAGE 222
+#define ERR_NO_INFO_JSON 333
+#define ERR_WRONG_COMMANDLINE 444
 
-#define SW_VER_CROWD            100
+#define SW_VER_CROWD 100
 
 #define PUNCTILIOUS
 
@@ -51,13 +51,13 @@ static time_t tnow_t;
 static struct tm* tm_tnow;
 static char human_timenow[MAX_LINE_LEN];
 static char json_name[200];
-static char *imgpath;
-static char *jsonpath;
-static char *loctag;
+static char* imgpath;
+static char* jsonpath;
+static char* loctag;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-  if(argc < 4){
+  if (argc < 4) {
     fprintf(stderr, "Usage : %s path/to/input/img path/to/output/json location_tag\n", argv[0]);
     exit(ERR_WRONG_COMMANDLINE);
   }
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
   infos.timestamp = tnow;
   infos.person_number = person_num;
   FILE* info_json = fopen(jsonpath, "w");
-  if(info_json == NULL){
+  if (info_json == NULL) {
     fprintf(stderr, "Cannot create info json : %s\n", jsonpath);
     exit(ERR_NO_INFO_JSON);
   }

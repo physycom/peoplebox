@@ -1,14 +1,14 @@
 #include "opencv2/opencv.hpp"
-#include <iostream>
-#include <ctime>
-#include <thread>
 #include <chrono>
+#include <ctime>
+#include <iostream>
+#include <thread>
 
 #define ERROR_VIDEO_STREAM 1
-#define ERROR_DUMP_FRAME   2
+#define ERROR_DUMP_FRAME 2
 
-#define IMAGE_DUMP_DT_SEC  5
-#define IMAGE_FOLDER       "images"
+#define IMAGE_DUMP_DT_SEC 5
+#define IMAGE_FOLDER "images"
 
 int main(int argc, char** argv)
 {
@@ -29,7 +29,7 @@ int main(int argc, char** argv)
   for (;;) {
     vcap >> frame;
     frame_name = std::string(IMAGE_FOLDER) + "/@PEOPLEBOX_ID@_" + std::to_string(std::time(0)) + ".jpg";
-    if( imwrite(frame_name,frame) )
+    if (imwrite(frame_name, frame))
       std::cout << "Frame " << frame_cnt++ << " (" << frame_name << ") dumped successfully" << std::endl;
     else {
       std::cerr << "Unable to write frame" << std::endl;
