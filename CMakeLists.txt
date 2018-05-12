@@ -11,25 +11,47 @@ endif()
 #darknet deps
 include(darknet/CMakeLists.txt)
 
-file(GLOB settings ${CMAKE_SOURCE_DIR}/src/boxvars/jetson*.cmakevars)
+if(CUDA_FOUND)
+  list(APPEND linked_libs darknet_cuda ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_curand_LIBRARY})
+endif()
 
-foreach(set IN LISTS settings)
-  include(${set})
-  get_filename_component(tag ${set} NAME_WE)
+if(CUDNN_FOUND)
+  list(APPEND linked_libs ${CUDNN_LIBRARY})
+endif()
 
-  # physycom
-  configure_file(${CMAKE_SOURCE_DIR}/src/darkcrowd.c.in ${CMAKE_SOURCE_DIR}/src/darkcrowd_${tag}.c)
+if(OpenCV_FOUND)
+  list(APPEND linked_libs ${OpenCV_LIBRARIES})
+endif()
+
+if(OPENMP_FOUND AND APPLE)
+  list(APPEND linked_libs OpenMP::OpenMP_C)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCC)
+  list(APPEND linked_libs m)
+endif()
+
+if(MSVC)
+  list(APPEND linked_libs ${PTHREADS_LIBRARIES} wsock32 ws2_32)
+endif()
+
+# single crowd-counting instance
+add_executable(darkcrowd ${CMAKE_SOURCE_DIR}/src/darkcrowd.c)
+target_link_libraries(darkcrowd darknet_lib ${CMAKE_THREAD_LIBS_INIT} ${linked_libs})
+install(TARGETS darkcrowd DESTINATION ${CMAKE_SOURCE_DIR})
+
+# multiple people-tracking instances
+file(GLOB jetson_settings ${CMAKE_SOURCE_DIR}/src/boxvars/jetson*.cmakevars)
+foreach(jset IN LISTS jetson_settings)
+  include(${jset})
+  get_filename_component(tag ${jset} NAME_WE)
   configure_file(${CMAKE_SOURCE_DIR}/src/darktrack.c.in ${CMAKE_SOURCE_DIR}/src/darktrack_${tag}.c)
-
   list(APPEND physycom_${tag}_exe
-    darkcrowd_${tag}
     darktrack_${tag}
   )
 
-  list(APPEND darkcrowd_${tag}_src ${CMAKE_SOURCE_DIR}/src/darkcrowd_${tag}.c)
   list(APPEND darktrack_${tag}_src ${CMAKE_SOURCE_DIR}/src/darktrack_${tag}.c)
   list(APPEND physycom_${tag}_src
-    darkcrowd_${tag}_src
     darktrack_${tag}_src
   )
 
@@ -41,30 +63,6 @@ foreach(set IN LISTS settings)
     add_executable(${exe} ${${src}})
     target_link_libraries(${exe} darknet_lib ${CMAKE_THREAD_LIBS_INIT})
   endforeach()
-
-  if(CUDA_FOUND)
-    list(APPEND linked_libs darknet_cuda ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_curand_LIBRARY})
-  endif()
-
-  if(CUDNN_FOUND)
-    list(APPEND linked_libs ${CUDNN_LIBRARY})
-  endif()
-
-  if(OpenCV_FOUND)
-    list(APPEND linked_libs ${OpenCV_LIBRARIES})
-  endif()
-
-  if(OPENMP_FOUND AND APPLE)
-    list(APPEND linked_libs OpenMP::OpenMP_C)
-  endif()
-
-  if(CMAKE_COMPILER_IS_GNUCC)
-    list(APPEND linked_libs m)
-  endif()
-
-  if(MSVC)
-    list(APPEND linked_libs ${PTHREADS_LIBRARIES} wsock32 ws2_32)
-  endif()
 
   foreach(${exe} IN LISTS ${physycom_${tag}_exe})
     target_link_libraries(${exe} ${linked_libs})

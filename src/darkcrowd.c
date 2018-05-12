@@ -30,30 +30,34 @@ double now_time;
 #define MAX_FRAME_INFO_TO_STORE 50
 #define MAX_LINE_LEN            20
 #define ERR_NO_FILE             111
-#define ERR_NO_STREAM           222
+#define ERR_NO_INPUT_IMAGE      222
 #define ERR_NO_INFO_JSON        333
+#define ERR_WRONG_COMMANDLINE   444
+
+#define SW_VER_CROWD            100
 
 #define PUNCTILIOUS
 
 static int person_name_index;
 static char person_label[] = "person";
-static int frame_num;
-
-static int infos_index;
 
 typedef struct frame_info {
   double timestamp;
-  unsigned int person_number, frame_number;
+  unsigned int person_number;
 } frame_info;
-static frame_info* infos;
+static frame_info infos;
 
 static double tnow;
 static time_t tnow_t;
 static struct tm* tm_tnow;
 static char human_timenow[MAX_LINE_LEN];
 static char json_name[200];
+static char *imgpath;
+static char *jsonpath;
+static char *loctag;
 
-void* fetch_in_thread(void* ptr)
+/* thread functions */
+void* fetch(void* ptr)
 {
   int status = fill_image_from_stream(cap, buff[buff_index]);
   letterbox_image_into(buff[buff_index], net->w, net->h, buff_letter[buff_index]);
@@ -65,7 +69,7 @@ void* fetch_in_thread(void* ptr)
   return 0;
 }
 
-void* detect_in_thread(void* ptr)
+void* detect(void* ptr)
 {
   float nms = .4;
   int i, j, count = 0, nboxes = 0, person_num = 0;
@@ -107,68 +111,55 @@ void* detect_in_thread(void* ptr)
     if (dets[i].prob[person_name_index] > demo_thresh)
       ++person_num;
 
-  ++frame_num;
-
 #ifdef PUNCTILIOUS
-#ifndef _WIN32
-  printf("\033[2J"); /* clear the screen */
-  printf("\033[1;1H"); /* move cursor to line 1 column 1 */
-#endif
   printf("UNIX  Time   : %.3f\n", tnow);
   printf("Human Time   : %s\n", human_timenow);
-  printf("Frame Number : %d\n", frame_num);
   printf("Puny humans  : %d\n", person_num);
   printf("FPS          : %.1f\n", fps);
 #endif
 
-  infos[infos_index].timestamp = tnow;
-  infos[infos_index].person_number = person_num;
-  infos[infos_index].frame_number = frame_num;
-  ++infos_index;
-  if (frame_num % MAX_FRAME_INFO_TO_STORE == 0) {
-    sprintf(json_name, "output/crowd.%ld.json", tnow_t);
-    FILE* info_json = fopen(json_name, "w");
-    if(info_json){
-      fprintf(stderr, "Cannot create info json\n");
-      exit(ERR_NO_INFO_JSON);
-    }
-    fprintf(info_json, "{\n");
-    for (i = 0; i < MAX_FRAME_INFO_TO_STORE; ++i) {
-      fprintf(info_json, "\t\"frame_%04d\" : {\n", infos[i].frame_number);
-      fprintf(info_json, "\t\t\"timestamp\" : %.3f,\n", infos[i].timestamp);
-      fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", "@PEOPLEBOX_ID@");
-      fprintf(info_json, "\t\t\"detection\" : \"%s\",\n", "@DETECTION_CROWD@");
-      fprintf(info_json, "\t\t\"sw_ver\" : %s,\n", "@SW_VER_CROWD@");
-      fprintf(info_json, "\t\t\"people_count\" : [{\"id\" : \"%s\", \"count\" : %d}],\n", "@ROI_ID@", infos[i].person_number);
-      fprintf(info_json, "\t\t\"diagnostics\" : [{\"id\" : \"coming\", \"value\" : \"soon\"}]\n");
-      (i != MAX_FRAME_INFO_TO_STORE - 1) ? fprintf(info_json, "\t},\n") : fprintf(info_json, "\t}\n");
-    }
-    fprintf(info_json, "}");
-    fclose(info_json);
-    infos_index = 0;
-    memset(infos, 0, MAX_FRAME_INFO_TO_STORE * sizeof(frame_info));
-    printf("Info dumped to JSON\n");
+  infos.timestamp = tnow;
+  infos.person_number = person_num;
+  FILE* info_json = fopen(jsonpath, "w");
+  if(info_json == NULL){
+    fprintf(stderr, "Cannot create info json : %s\n", jsonpath);
+    exit(ERR_NO_INFO_JSON);
   }
+  fprintf(info_json, "{\n");
+  fprintf(info_json, "\t\t\"timestamp\" : %.3f,\n", infos.timestamp);
+  fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", loctag);
+  fprintf(info_json, "\t\t\"detection\" : \"%s\",\n", "crowd");
+  fprintf(info_json, "\t\t\"sw_ver\" : %d,\n", SW_VER_CROWD);
+  fprintf(info_json, "\t\t\"people_count\" : [{\"id\" : \"%s\", \"count\" : %d}],\n", "nome_coming_soon", infos.person_number);
+  fprintf(info_json, "\t\t\"diagnostics\" : [{\"id\" : \"coming\", \"value\" : \"soon\"}]\n");
+  fprintf(info_json, "}");
+  fclose(info_json);
+  printf("Info dumped to JSON\n");
 
   free_detections(dets, nboxes);
   demo_index = (demo_index + 1) % demo_frame;
   return 0;
 }
 
-int main()
+int main(int argc, char **argv)
 {
+  if(argc < 4){
+    fprintf(stderr, "Usage : %s path/to/input/img path/to/output/json location_tag\n", argv[0]);
+    exit(ERR_WRONG_COMMANDLINE);
+  }
+
+  imgpath = argv[1];
+  jsonpath = argv[2];
+  loctag = argv[3];
+
   int i;
   char* cfg = "darknet/cfg/yolov3.cfg";
   char* weights = "darknet/yolov3.weights";
-  char* filename = "rtsp://root:camera@131.154.10.192:554/rtpstream/config1=u";
   char* name_list = "darknet/data/coco.names";
 
   demo_thresh = .5;
   demo_hier = .5;
   demo_classes = 80;
-
-  /* prepare frame info array */
-  infos = (frame_info*)malloc(MAX_FRAME_INFO_TO_STORE * sizeof(frame_info));
 
   FILE* file = fopen(name_list, "r");
   if (!file) {
@@ -202,13 +193,12 @@ int main()
 
   avg = (float*)calloc(demo_total, sizeof(float));
 
-  printf("video stream: %s\n", filename);
-  cap = cvCaptureFromFile(filename);
-  //cap = cvCaptureFromCAM(1);
+  fprintf(stdout, "input image: %s\n", imgpath);
+  cap = cvCaptureFromFile(imgpath);
 
   if (!cap) {
-    fprintf(stderr, "cannot connect to video stream.\n");
-    exit(ERR_NO_STREAM);
+    fprintf(stderr, "cannot open img.\n");
+    exit(ERR_NO_INPUT_IMAGE);
   }
 
   buff[0] = get_image_from_stream(cap);
@@ -220,21 +210,9 @@ int main()
 
   i = 0;
   demo_time = what_time_is_it_now();
-  while (!demo_done) {
-    buff_index = (buff_index + 1) % 3;
-    if (pthread_create(&fetch_thread, 0, fetch_in_thread, 0))
-      error("thread creation failed");
-    if (pthread_create(&detect_thread, 0, detect_in_thread, 0))
-      error("thread creation failed");
-    now_time = what_time_is_it_now();
-    fps = 1. / (now_time - demo_time);
-    demo_time = now_time;
 
-    pthread_join(fetch_thread, 0);
-    pthread_join(detect_thread, 0);
-
-    ++i;
-  }
+  fetch(NULL);
+  detect(NULL);
 
   /* delete pointers */
   for (i = 0; i < demo_classes; ++i)
