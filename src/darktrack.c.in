@@ -136,9 +136,9 @@ void* detect_in_thread(void* ptr)
   infos[infos_index].frame_number = frame_num;
   ++infos_index;
   if (frame_num % MAX_FRAME_INFO_TO_STORE == 0) {
-    sprintf(json_name, "data/track.%ld.json", tnow_t);
+    sprintf(json_name, "data/%s_%ld.json", "@PEOPLEBOX_ID@", tnow_t);
     FILE* info_json = fopen(json_name, "w");
-    if(info_json){
+    if(info_json == NULL){
       fprintf(stderr, "Cannot create info json\n");
       exit(ERR_NO_INFO_JSON);
     }
