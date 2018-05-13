@@ -12,14 +12,15 @@
 
 int main(int argc, char** argv)
 {
-  if (argc < 2) {
-    std::cerr << "Usage : " << argv[0] << " path/or/url/to/video" << std::endl;
-    exit(1);
-  }
+  std::string input;
+  if (argc > 1)
+    input = argv[1];
+  else
+    input = "rtsp://physycom:ohnounapassWORD55@@CAMERA_IP@:554/rtpstream/config1=u";
 
-  cv::VideoCapture vcap(argv[1]);
+  cv::VideoCapture vcap(input);
   if (!vcap.isOpened()) {
-    std::cout << "Error opening video stream or file" << std::endl;
+    std::cerr << "Error opening video stream or file : " << input << std::endl;
     exit(ERROR_VIDEO_STREAM);
   }
 
