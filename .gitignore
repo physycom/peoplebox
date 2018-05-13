@@ -58,7 +58,6 @@ darktrack_*
 dump_stream
 dump_stream.exe
 save_frame_*
-src/peoplebox_params.h
 
 *.avi
 images/
