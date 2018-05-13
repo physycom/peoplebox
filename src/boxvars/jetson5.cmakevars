@@ -1,4 +1,5 @@
 set(PEOPLEBOX_ID "GRISOSTOMO")
+set(CAMERA_IP "192.168.5.205")
 set(ROI_ID "___")
 set(DETECTION_TYPE_CROWD "crowd")
 set(DETECTION_TYPE_TRACK "tracking")
