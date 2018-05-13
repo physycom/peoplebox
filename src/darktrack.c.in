@@ -147,7 +147,7 @@ void* detect_in_thread(void* ptr)
       fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", "@PEOPLEBOX_ID@");
       fprintf(info_json, "\t\t\"detection\" : \"%s\",\n", "@DETECTION_TYPE_TRACK@");
       fprintf(info_json, "\t\t\"sw_ver\" : %s,\n", "@SW_VER_TRACK@");
-      fprintf(info_json, "\t\t\"people_count\" : [{\"id\" : \"%s\", \"count\" : %d}],\n", "@BARRIER_ID@", infos.person_number);
+      fprintf(info_json, "\t\t\"people_count\" : [{\"id\" : \"%s\", \"count\" : %d}],\n", "@BARRIER_ID@", infos[i].person_number);
       /*
       if (infos[i].person_number) {
         fprintf(info_json, "\t\t\"people_x\" : [ ");
