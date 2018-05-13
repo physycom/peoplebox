@@ -76,7 +76,7 @@ if(OpenCV_FOUND)
   add_executable(dump_stream ${CMAKE_SOURCE_DIR}/src/dump_stream.cpp)
   target_link_libraries(dump_stream ${OpenCV_LIBRARIES})
 
-  file(GLOB raspi_settings ${CMAKE_SOURCE_DIR}/src/boxvars/raspi*.cmakevars)
+  file(GLOB raspi_settings ${CMAKE_SOURCE_DIR}/src/boxvars/*.cmakevars)
   foreach(rset IN LISTS raspi_settings)
     include(${rset})
     get_filename_component(rtag ${rset} NAME_WE)

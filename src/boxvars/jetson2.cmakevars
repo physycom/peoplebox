@@ -1,8 +1,3 @@
 set(PEOPLEBOX_ID "ORESI")
 set(CAMERA_IP "192.168.5.202")
-set(ROI_ID "___")
-set(BARRIER_ID "oresi_in")
-set(DETECTION_TYPE_CROWD "crowd")
 set(DETECTION_TYPE_TRACK "tracking")
-set(SW_VER_CROWD "100")
-set(SW_VER_TRACK "201")

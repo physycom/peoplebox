@@ -130,7 +130,7 @@ int main(int argc, char** argv)
   fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", loctag);
   fprintf(info_json, "\t\t\"detection\" : \"%s\",\n", "crowd");
   fprintf(info_json, "\t\t\"sw_ver\" : %d,\n", SW_VER_CROWD);
-  fprintf(info_json, "\t\t\"people_count\" : [{\"id\" : \"%s\", \"count\" : %d}],\n", "nome_coming_soon", infos.person_number);
+  fprintf(info_json, "\t\t\"people_count\" : [{\"id\" : \"%s\", \"count\" : %d}],\n", loctag, infos.person_number);
   fprintf(info_json, "\t\t\"diagnostics\" : [{\"id\" : \"coming\", \"value\" : \"soon\"}]\n");
   fprintf(info_json, "}");
   fclose(info_json);
