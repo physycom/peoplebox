@@ -61,3 +61,4 @@ save_frame_*
 
 *.avi
 images/
+*.sw_ver
