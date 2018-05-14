@@ -1,2 +1,3 @@
 set(PEOPLEBOX_ID "CORRER")
 set(CAMERA_IP "192.168.5.206")
+set(CAMERA_CREDENTIALS "physycom:ohnounapassWORD55")

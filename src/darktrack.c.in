@@ -36,8 +36,7 @@ double demo_time;
 #define SW_VER_TRACK            202
 #define JSON_FOLDER             "data"
 
-
-//#define PUNCTILIOUS
+#define PUNCTILIOUS
 
 static int person_name_index;
 static char person_label[] = "person";
@@ -146,6 +145,7 @@ void* detect_in_thread(void* ptr)
     }
     fprintf(info_json, "{\n");
     for (i = 0; i < MAX_FRAME_INFO_TO_STORE; ++i) {
+      if ( i%3 == 0 ) continue;
       fprintf(info_json, "\t\"frame_%d\" : {\n", infos[i].frame_number);
       fprintf(info_json, "\t\t\"timestamp\" : %.3f,\n", infos[i].timestamp);
       fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", "@PEOPLEBOX_ID@");
@@ -187,7 +187,7 @@ int main()
   int i;
   char* cfg = "darknet/cfg/yolov3.cfg";
   char* weights = "darknet/yolov3.weights";
-  char* filename = "rtsp://physycom:ohnounapassWORD55@@CAMERA_IP@:554/rtpstream/config1=u";
+  char* filename = "rtsp://@CAMERA_CREDENTIALS@@@CAMERA_IP@:554/rtpstream/config1=u";
   char* name_list = "darknet/data/coco.names";
 
   demo_thresh = .5;

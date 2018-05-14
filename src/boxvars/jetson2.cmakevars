@@ -1,3 +1,4 @@
 set(PEOPLEBOX_ID "ORESI")
 set(CAMERA_IP "192.168.5.202")
+set(CAMERA_CREDENTIALS "physycom:ohnounapassWORD55")
 set(DETECTION_TYPE_TRACK "tracking")
