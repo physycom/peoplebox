@@ -46,29 +46,10 @@ foreach(jset IN LISTS jetson_settings)
   include(${jset})
   get_filename_component(tag ${jset} NAME_WE)
   configure_file(${CMAKE_SOURCE_DIR}/src/darktrack.c.in ${CMAKE_SOURCE_DIR}/src/darktrack_${tag}.c)
-  list(APPEND physycom_${tag}_exe
-    darktrack_${tag}
-  )
-
-  list(APPEND darktrack_${tag}_src ${CMAKE_SOURCE_DIR}/src/darktrack_${tag}.c)
-  list(APPEND physycom_${tag}_src
-    darktrack_${tag}_src
-  )
-
-  list(LENGTH physycom_${tag}_exe physycom_${tag}_len_)
-  math(EXPR physycom_${tag}_len ${physycom_${tag}_len_}-1)
-  foreach(i RANGE ${physycom_${tag}_len})
-    list(GET physycom_${tag}_exe ${i} exe)
-    list(GET physycom_${tag}_src ${i} src)
-    add_executable(${exe} ${${src}})
-    target_link_libraries(${exe} darknet_lib ${CMAKE_THREAD_LIBS_INIT})
-  endforeach()
-
-  foreach(${exe} IN LISTS ${physycom_${tag}_exe})
-    target_link_libraries(${exe} ${linked_libs})
-  endforeach()
-
-  install(TARGETS ${physycom_${tag}_exe} DESTINATION ${CMAKE_SOURCE_DIR})
+  add_executable(darktrack_${tag} ${CMAKE_SOURCE_DIR}/src/darktrack_${tag}.c)
+  list(APPEND apps darktrack_${tag})
+  target_link_libraries(darktrack_${tag} darknet_lib ${linked_libs} ${CMAKE_THREAD_LIBS_INIT})
+  install(TARGETS darktrack_${tag} DESTINATION ${CMAKE_SOURCE_DIR})
 endforeach()
 
 # tools
@@ -76,15 +57,27 @@ if(OpenCV_FOUND)
   add_executable(dump_stream ${CMAKE_SOURCE_DIR}/src/dump_stream.cpp)
   target_link_libraries(dump_stream ${OpenCV_LIBRARIES})
 
-  file(GLOB raspi_settings ${CMAKE_SOURCE_DIR}/src/boxvars/*.cmakevars)
-  foreach(rset IN LISTS raspi_settings)
-    include(${rset})
-    get_filename_component(rtag ${rset} NAME_WE)
-    configure_file(${CMAKE_SOURCE_DIR}/src/save_frame.cpp.in ${CMAKE_SOURCE_DIR}/src/save_frame_${rtag}.cpp)
-    add_executable(save_frame_${rtag} ${CMAKE_SOURCE_DIR}/src/save_frame_${rtag}.cpp)
-    target_link_libraries(save_frame_${rtag} ${OpenCV_LIBRARIES})
-    install(TARGETS save_frame_${rtag} DESTINATION ${CMAKE_SOURCE_DIR})
+  file(GLOB settings ${CMAKE_SOURCE_DIR}/src/boxvars/*.cmakevars)
+  foreach(set IN LISTS settings)
+    include(${set})
+    get_filename_component(tag ${set} NAME_WE)
+    configure_file(${CMAKE_SOURCE_DIR}/src/save_frame.cpp.in ${CMAKE_SOURCE_DIR}/src/save_frame_${tag}.cpp)
+    add_executable(save_frame_${tag} ${CMAKE_SOURCE_DIR}/src/save_frame_${tag}.cpp)
+    list(APPEND apps save_frame_${tag})
+    target_link_libraries(save_frame_${tag} ${OpenCV_LIBRARIES})
+    install(TARGETS save_frame_${tag} DESTINATION ${CMAKE_SOURCE_DIR})
   endforeach()
 
   install(TARGETS dump_stream DESTINATION ${CMAKE_SOURCE_DIR})
 endif()
+
+if( remote )
+  message("remote          : ${remote}")
+  add_custom_target(deploy_darknetlib DEPENDS darknet_lib COMMAND scp -rpd $<TARGET_LINKER_FILE:darknet_lib> ${remote})
+  foreach(app IN LISTS apps)
+    add_custom_target(deploy_${app} DEPENDS ${app} COMMAND scp -rpd $<TARGET_FILE:${app}> ${remote})
+    list(APPEND deployable deploy_${app})
+  endforeach()
+  add_custom_target(deploy DEPENDS ${deployable} deploy_darknetlib)
+endif()
+
