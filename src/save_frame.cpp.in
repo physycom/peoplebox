@@ -15,7 +15,7 @@
 #define SAMPLING_DT_SEC      10 // 300
 #define FRAME_SAMPLING_RATE  (CAM_FPS*SAMPLING_DT_SEC)
 
-#define SW_VER               103
+#define SW_VER               105
 
 int main(int argc, char** argv)
 {
