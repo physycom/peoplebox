@@ -12,7 +12,7 @@
 #define IMAGE_FOLDER         "images"
 
 #define CAM_FPS              3
-#define SAMPLING_DT_SEC      10 // 300
+#define SAMPLING_DT_SEC      300
 #define FRAME_SAMPLING_RATE  (CAM_FPS*SAMPLING_DT_SEC)
 
 #define SW_VER               105
