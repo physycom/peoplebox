@@ -28,6 +28,7 @@ double demo_time;
 // physycom add
 #define MAX_FRAME_INFO_TO_STORE 50
 #define FRAME_NUMBER_TRACKING   5
+#define SUBSAMPLE_RATE          3
 #define MAX_LINE_LEN            20
 #define ERR_NO_FILE             111
 #define ERR_NO_STREAM           222
@@ -145,7 +146,7 @@ void* detect_in_thread(void* ptr)
     }
     fprintf(info_json, "{\n");
     for (i = 0; i < MAX_FRAME_INFO_TO_STORE; ++i) {
-      if ( i%3 != 0 ) continue;  // downsample the actual data to one json per second
+      if ( i%SUBSAMPLE_RATE != 0 ) continue;  // downsample the actual data to one json per second
       fprintf(info_json, "\t\"frame_%d\" : {\n", infos[i].frame_number);
       fprintf(info_json, "\t\t\"timestamp\" : %.3f,\n", infos[i].timestamp);
       fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", "@PEOPLEBOX_ID@");
@@ -168,7 +169,7 @@ void* detect_in_thread(void* ptr)
       }
       */
       fprintf(info_json, "\t\t\"diagnostics\" : [{\"id\" : \"coming\", \"value\" : \"soon\"}]\n");
-      (i != MAX_FRAME_INFO_TO_STORE - 1) ? fprintf(info_json, "\t},\n") : fprintf(info_json, "\t}\n");
+      (i != MAX_FRAME_INFO_TO_STORE - SUBSAMPLE_RATE) ? fprintf(info_json, "\t},\n") : fprintf(info_json, "\t}\n");
     }
     fprintf(info_json, "}");
     fclose(info_json);
