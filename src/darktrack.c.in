@@ -33,7 +33,7 @@ double demo_time;
 #define JSON_FOLDER             "data"
 
 #define PUNCTILIOUS
-#define SW_VER_TRACK            202
+#define SW_VER_TRACK            203
 
 #define ERR_NO_FILE             111
 #define ERR_NO_STREAM           222
