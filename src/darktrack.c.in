@@ -28,11 +28,9 @@ double demo_time;
 // physycom add
 #define MAX_FRAME_INFO_TO_STORE 12
 #define FRAME_NUMBER_TRACKING   5
+#define DOWNSAMPLING            3
 #define MAX_LINE_LEN            20
 #define JSON_FOLDER             "data"
-#define DOWNSAMPLING            3
-
-
 
 #define PUNCTILIOUS
 #define SW_VER_TRACK            202
@@ -171,7 +169,7 @@ void* detect_in_thread(void* ptr)
       }
       */
       fprintf(info_json, "\t\t\"diagnostics\" : [{\"id\" : \"coming\", \"value\" : \"soon\"}]\n");
-      (i < ((MAX_FRAME_INFO_TO_STORE-1)/DOWNSAMPLING)*DOWNSAMPLING) ? fprintf(info_json, "\t},\n") : fprintf(info_json, "\t}\n");
+      (i != MAX_FRAME_INFO_TO_STORE - DOWNSAMPLING) ? fprintf(info_json, "\t},\n") : fprintf(info_json, "\t}\n");
     }
     fprintf(info_json, "}");
     fclose(info_json);
