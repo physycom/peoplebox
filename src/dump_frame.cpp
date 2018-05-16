@@ -14,7 +14,7 @@ int main(int argc, char** argv)
 {
   std::string input;
   int frame_to_dump;
-  if (argc > 3)
+  if (argc > 2)
   {
     input = argv[1];
     try
