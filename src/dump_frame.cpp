@@ -16,10 +16,10 @@ int main(int argc, char** argv)
   int frame_to_dump;
   if (argc > 2)
   {
-    input = argv[1];
+    input = argv[2];
     try
     {
-      frame_to_dump = std::stoi(argv[2]);
+      frame_to_dump = std::stoi(argv[1]);
     }
     catch(std::exception &e)
     {
