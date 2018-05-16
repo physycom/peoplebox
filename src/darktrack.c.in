@@ -169,7 +169,7 @@ void* detect_in_thread(void* ptr)
       }
       */
       fprintf(info_json, "\t\t\"diagnostics\" : [{\"id\" : \"coming\", \"value\" : \"soon\"}]\n");
-      (i != MAX_FRAME_INFO_TO_STORE - DOWNSAMPLING) ? fprintf(info_json, "\t},\n") : fprintf(info_json, "\t}\n");
+      (i < MAX_FRAME_INFO_TO_STORE - DOWNSAMPLING) ? fprintf(info_json, "\t},\n") : fprintf(info_json, "\t}\n");
     }
     fprintf(info_json, "}");
     fclose(info_json);
