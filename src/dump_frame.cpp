@@ -50,6 +50,7 @@ int main(int argc, char** argv)
       std::cerr << "Unable to write frame" << std::endl;
       exit(ERROR_DUMP_FRAME);
     }
+    ++frame_cnt;
   }
   vcap.release();
 
