@@ -58,6 +58,8 @@ darktrack_*
 dump_stream
 dump_stream.exe
 save_frame_*
+dump_frame
+dump_frame.exe
 
 *.avi
 images/
