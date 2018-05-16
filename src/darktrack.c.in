@@ -138,6 +138,7 @@ void* detect_in_thread(void* ptr)
   infos[infos_index].frame_number = frame_num;
   ++infos_index;
   if (frame_num % MAX_FRAME_INFO_TO_STORE == 0) {
+    if( frame_num > 10000 ) frame_num = 0;
     sprintf(json_name, "%s/%s_%ld.json", JSON_FOLDER, "@PEOPLEBOX_ID@", tnow_t);
     FILE* info_json = fopen(json_name, "w");
     if (info_json == NULL) {
@@ -147,7 +148,7 @@ void* detect_in_thread(void* ptr)
     fprintf(info_json, "{\n");
     for (i = 0; i < MAX_FRAME_INFO_TO_STORE; ++i) {
       if ( i%DOWNSAMPLING != 0 ) continue;  // downsample the actual data to one json per second
-      fprintf(info_json, "\t\"frame_%d\" : {\n", infos[i].frame_number);
+      fprintf(info_json, "\t\"frame_%05d\" : {\n", infos[i].frame_number);
       fprintf(info_json, "\t\t\"timestamp\" : %.3f,\n", infos[i].timestamp);
       fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", "@PEOPLEBOX_ID@");
       fprintf(info_json, "\t\t\"detection\" : \"%s\",\n", "@DETECTION_TYPE_TRACK@");
