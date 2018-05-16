@@ -1,0 +1,57 @@
+#include "opencv2/opencv.hpp"
+#include <chrono>
+#include <ctime>
+#include <iostream>
+#include <fstream>
+#include <thread>
+
+#define ERROR_CLI               111
+#define ERROR_VIDEO_STREAM      222
+#define ERROR_DUMP_FRAME        333
+#define IMAGE_FOLDER            "frames"
+
+int main(int argc, char** argv)
+{
+  std::string input;
+  int frame_to_dump;
+  if (argc > 3)
+  {
+    input = argv[1];
+    try
+    {
+      frame_to_dump = std::stoi(argv[2]);
+    }
+    catch(std::exception &e)
+    {
+      std::cerr << "Error in command line : " << e.what() << std::endl;
+      exit(ERROR_CLI);
+    }
+  }
+  else{
+    std::cerr << "Usage : " << argv[0] << " number_of_frames_to_dump path/to/video" << std::endl;
+    exit(ERROR_CLI);
+  }
+
+  cv::VideoCapture vcap(input);
+  if (!vcap.isOpened()) {
+    std::cerr << "Error opening video stream or file : " << input << std::endl;
+    exit(ERROR_VIDEO_STREAM);
+  }
+
+  cv::Mat frame;
+  std::string frame_name;
+  int frame_cnt = 0;
+  for (int i = 0; i < frame_to_dump; ++i) {
+    vcap >> frame;
+    frame_name = std::string(IMAGE_FOLDER) + "/frame_" + std::to_string(i) + ".jpg";
+    if (imwrite(frame_name + ".jpg", frame))
+      std::cout << "Frame " << frame_cnt << " (" << frame_name << ") dumped successfully" << std::endl;
+    else {
+      std::cerr << "Unable to write frame" << std::endl;
+      exit(ERROR_DUMP_FRAME);
+    }
+  }
+  vcap.release();
+
+  return 0;
+}

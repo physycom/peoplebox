@@ -56,6 +56,11 @@ endforeach()
 if(OpenCV_FOUND)
   add_executable(dump_stream ${CMAKE_SOURCE_DIR}/src/dump_stream.cpp)
   target_link_libraries(dump_stream ${OpenCV_LIBRARIES})
+  install(TARGETS dump_stream DESTINATION ${CMAKE_SOURCE_DIR})
+
+  add_executable(dump_frame ${CMAKE_SOURCE_DIR}/src/dump_frame.cpp)
+  target_link_libraries(dump_frame ${OpenCV_LIBRARIES})
+  install(TARGETS dump_frame DESTINATION ${CMAKE_SOURCE_DIR})
 
   file(GLOB settings ${CMAKE_SOURCE_DIR}/src/boxvars/*.cmakevars)
   foreach(set IN LISTS settings)
@@ -67,10 +72,9 @@ if(OpenCV_FOUND)
     target_link_libraries(save_frame_${tag} ${OpenCV_LIBRARIES})
     install(TARGETS save_frame_${tag} DESTINATION ${CMAKE_SOURCE_DIR})
   endforeach()
-
-  install(TARGETS dump_stream DESTINATION ${CMAKE_SOURCE_DIR})
 endif()
 
+# remote deploy (untested)
 if( remote )
   message("remote          : ${remote}")
   add_custom_target(deploy_darknetlib DEPENDS darknet_lib COMMAND scp -rpd $<TARGET_LINKER_FILE:darknet_lib> ${remote})
