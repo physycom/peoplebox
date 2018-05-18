@@ -1,4 +1,4 @@
-nset(PEOPLEBOX_ID "LAB")
+set(PEOPLEBOX_ID "LAB")
 set(CAMERA_IP "131.154.10.192")
 set(CAMERA_CREDENTIALS "root:camera")
 set(DETECTION_TYPE_TRACK "tracking")
