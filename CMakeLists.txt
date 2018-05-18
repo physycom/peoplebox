@@ -39,41 +39,65 @@ if(MSVC)
   list(APPEND linked_libs ${PTHREADS_LIBRARIES} wsock32 ws2_32)
 endif()
 
-# single crowd-counting instance
+# crowd-counting
 add_executable(darkcrowd ${CMAKE_SOURCE_DIR}/src/darkcrowd.c)
 target_link_libraries(darkcrowd darknet_lib ${CMAKE_THREAD_LIBS_INIT} ${linked_libs})
 install(TARGETS darkcrowd DESTINATION ${CMAKE_SOURCE_DIR})
 
-# multiple people-tracking instances
+# tracking
+add_custom_target(tracking)
 file(GLOB jetson_settings ${CMAKE_SOURCE_DIR}/src/boxvars/jetson*.cmakevars)
 foreach(jset IN LISTS jetson_settings)
   include(${jset})
   get_filename_component(tag ${jset} NAME_WE)
-  configure_file(${CMAKE_SOURCE_DIR}/src/darktrack.c.in ${CMAKE_SOURCE_DIR}/src/darktrack_${tag}.c)
-  add_executable(darktrack_${tag} ${CMAKE_SOURCE_DIR}/src/darktrack_${tag}.c)
-  list(APPEND apps darktrack_${tag})
+  configure_file(${CMAKE_SOURCE_DIR}/src/darktrack.c.in ${CMAKE_SOURCE_DIR}/src/auto/darktrack_${tag}.c)
+  add_executable(darktrack_${tag} ${CMAKE_SOURCE_DIR}/src/auto/darktrack_${tag}.c)
   target_link_libraries(darktrack_${tag} darknet_lib ${linked_libs} ${CMAKE_THREAD_LIBS_INIT})
   install(TARGETS darktrack_${tag} DESTINATION ${CMAKE_SOURCE_DIR})
+  add_dependencies(tracking darktrack_${tag})
 endforeach()
 
-# tools
+add_custom_target(tools)
+add_custom_target(test)
 if(OpenCV_FOUND)
-  add_executable(dump_stream ${CMAKE_SOURCE_DIR}/src/dump_stream.cpp)
-  target_link_libraries(dump_stream ${OpenCV_LIBRARIES})
-  install(TARGETS dump_stream DESTINATION ${CMAKE_SOURCE_DIR})
 
-  add_executable(dump_frame ${CMAKE_SOURCE_DIR}/src/dump_frame.cpp)
-  target_link_libraries(dump_frame ${OpenCV_LIBRARIES})
-  install(TARGETS dump_frame DESTINATION ${CMAKE_SOURCE_DIR})
-
+  # tools
   file(GLOB settings ${CMAKE_SOURCE_DIR}/src/boxvars/*.cmakevars)
   foreach(set IN LISTS settings)
     include(${set})
     get_filename_component(tag ${set} NAME_WE)
-    configure_file(${CMAKE_SOURCE_DIR}/src/save_frame.cpp.in ${CMAKE_SOURCE_DIR}/src/save_frame_${tag}.cpp)
-    add_executable(save_frame_${tag} ${CMAKE_SOURCE_DIR}/src/save_frame_${tag}.cpp)
-    list(APPEND apps save_frame_${tag})
+    configure_file(${CMAKE_SOURCE_DIR}/src/save_frame.cpp.in ${CMAKE_SOURCE_DIR}/src/auto/save_frame_${tag}.cpp)
+    add_executable(save_frame_${tag} ${CMAKE_SOURCE_DIR}/src/auto/save_frame_${tag}.cpp)
     target_link_libraries(save_frame_${tag} ${OpenCV_LIBRARIES})
     install(TARGETS save_frame_${tag} DESTINATION ${CMAKE_SOURCE_DIR})
+    add_dependencies(tools save_frame_${tag})
   endforeach()
+
+  add_executable(dump_stream ${CMAKE_SOURCE_DIR}/src/dump_stream.cpp)
+  target_link_libraries(dump_stream ${OpenCV_LIBRARIES})
+  install(TARGETS dump_stream DESTINATION ${CMAKE_SOURCE_DIR})
+  add_dependencies(tools dump_stream)
+
+  add_executable(dump_frame ${CMAKE_SOURCE_DIR}/src/dump_frame.cpp)
+  target_link_libraries(dump_frame ${OpenCV_LIBRARIES})
+  install(TARGETS dump_frame DESTINATION ${CMAKE_SOURCE_DIR})
+  add_dependencies(tools dump_frame)
+
+  # test
+  file(GLOB settings ${CMAKE_SOURCE_DIR}/src/boxvars/*.cmakevars_test)
+  file(GLOB test_src ${CMAKE_SOURCE_DIR}/src/*test*.c.in)
+  foreach(set IN LISTS settings)
+    include(${set})
+    get_filename_component(stag ${set} NAME_WE)
+    foreach(src IN LISTS test_src)
+      get_filename_component(ttag ${src} NAME_WE)
+      set(tgt ${ttag}_${stag})
+      configure_file(${src} ${CMAKE_SOURCE_DIR}/src/auto/${tgt}.c)
+      add_executable(${tgt} ${CMAKE_SOURCE_DIR}/src/auto/${tgt}.c)
+      target_link_libraries(${tgt} ${OpenCV_LIBRARIES} darknet_lib ${linked_libs} ${CMAKE_THREAD_LIBS_INIT})
+      install(TARGETS ${tgt} DESTINATION ${CMAKE_SOURCE_DIR})
+      add_dependencies(test ${tgt})
+    endforeach(src)
+  endforeach(set)
+
 endif()

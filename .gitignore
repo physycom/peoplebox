@@ -48,18 +48,21 @@ darknet_lib.dll
 darknet_cuda.lib
 libdarknet_cuda.a
 
-darkcrowd
 darktrack
-darkcrowd_*.exe
+darkcrowd
+darktest_*.c
+darktest_*
+darktest_*.exe
+darktrack_*.c
+darktrack_*
 darktrack_*.exe
 darkcrowd_*.c
-darktrack_*.c
 darkcrowd_*
-darktrack_*
+darkcrowd_*.exe
 dump_stream
 dump_stream.exe
+save_frame_*.c
 save_frame
-save_frame_*
 save_frame_*.exe
 dump_frame
 dump_frame.exe
