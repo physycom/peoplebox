@@ -202,12 +202,12 @@ void* detect_in_thread(void* ptr)
             min_dist = (min_dist < dist) ? min_dist : dist;
           }
 /************************ FLUX ********************************/
-          if(DIRECTION == "UP_DOWN")
+          if(strcmp(DIRECTION,"UP_DOWN") == 0)
           {
             if (y < (BARRIER_TOP + BARRIER_BOTTOM)*.5f) ++na;
             else                                        ++nb;
           }
-          else if(DIRECTION == "LEFT_RIGHT")
+          else if(strcmp(DIRECTION,"LEFT_RIGHT") == 0)
           {
             if (x < (BARRIER_LEFT + BARRIER_RIGHT)*.5f) ++na;
             else                                        ++nb;
