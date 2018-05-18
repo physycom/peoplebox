@@ -11,6 +11,10 @@ endif()
 #darknet deps
 include(darknet/CMakeLists.txt)
 
+if(VERBOSE)
+  add_definitions(-DVERBOSE)
+endif()
+
 if(CUDA_FOUND)
   list(APPEND linked_libs darknet_cuda ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_curand_LIBRARY})
 endif()
