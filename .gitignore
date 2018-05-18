@@ -46,6 +46,7 @@ libdarknet.so
 darknet_lib.lib
 darknet_lib.dll
 darknet_cuda.lib
+libdarknet_cuda.a
 
 darkcrowd
 darktrack
@@ -57,7 +58,9 @@ darkcrowd_*
 darktrack_*
 dump_stream
 dump_stream.exe
+save_frame
 save_frame_*
+save_frame_*.exe
 dump_frame
 dump_frame.exe
 
