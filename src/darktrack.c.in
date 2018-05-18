@@ -184,6 +184,7 @@ void* detect_in_thread(void* ptr)
     {
       if (dets[i].prob[person_name_index] > demo_thresh) // if person
       {
+        ++person_num;
         x = dets[i].bbox.x * buff[0].w; // bbox coords in [0, 1)
         y = dets[i].bbox.y * buff[0].h; // bbox coords in [0, 1)
 
