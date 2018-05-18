@@ -247,8 +247,8 @@ void* detect_in_thread(void* ptr)
   x4 = - b0 - b2 + b4;
   x5 = - b1 - b3 + b5;
 
-  FLUX_IN  += x4;
-  FLUX_OUT += x5;
+  FLUX_IN  = x4;
+  FLUX_OUT = x5;
 
   old_size = nboxes;
   for( i = 0; i < old_size; ++i)
@@ -282,6 +282,8 @@ void* detect_in_thread(void* ptr)
 
   infos[infos_index].cnt_in  += @BARRIER_IN@;
   infos[infos_index].cnt_out += @BARRIER_OUT@;
+  infos[infos_index].flux_in  += FLUX_IN;
+  infos[infos_index].flux_out += FLUX_OUT;
 
   if(frame_num % SAMPLING_FRAME_RATE == 0){ // every sampling dt
     infos[infos_index].timestamp = tnow;
@@ -323,7 +325,7 @@ void* detect_in_thread(void* ptr)
       }
       */
       fprintf(info_json, "\t\t\"diagnostics\" : [{\"id\" : \"coming\", \"value\" : \"soon\"}]\n");
-      (i < MAX_FRAME_INFO_TO_STORE /*- DOWNSAMPLING*/) ? fprintf(info_json, "\t},\n") : fprintf(info_json, "\t}\n");
+      (i < MAX_FRAME_INFO_TO_STORE-1 /*- DOWNSAMPLING*/) ? fprintf(info_json, "\t},\n") : fprintf(info_json, "\t}\n");
     }
     fprintf(info_json, "}");
     fclose(info_json);
