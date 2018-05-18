@@ -26,16 +26,16 @@ static int demo_total = 0;
 double demo_time;
 
 // physycom add
-#define MAX_FRAME_INFO_TO_STORE 50
-#define FRAME_NUMBER_TRACKING   5
-#define DOWNSAMPLING            3
-#define MAX_LINE_LEN            20
-#define JSON_FOLDER             "data"
-#define SAMPLING_DT_SEC         5
-#define FPS                     3
-#define SAMPLING_FRAME_RATE     (SAMPLING_DT_SEC * FPS)
+#define MAX_FRAME_INFO_TO_STORE 50                        // size of json output
+#define FRAME_NUMBER_TRACKING   5                         // ?
+#define DOWNSAMPLING            3                         // ?
+#define MAX_LINE_LEN            20                        // ?
+#define JSON_FOLDER             "data"                    // output folder
+#define SAMPLING_DT_SEC         5                         // dt between single records
+#define FPS                     3                         // source fps
+#define SAMPLING_FRAME_RATE     (SAMPLING_DT_SEC * FPS)   // number of frames between records records
 
-#define PUNCTILIOUS
+#define PUNCTILIOUS                                       // enable console output (cool stuff)
 #define SW_VER_TRACK            204
 
 #define ERR_NO_FILE             111
@@ -44,16 +44,16 @@ double demo_time;
 #define ERR_THREAD_CREATION     222
 
 // BARRIER
-#define MAX_NUM_PERSON          50
-#define BARRIER_TOP             @BARRIER_TOP@
-#define BARRIER_BOTTOM          @BARRIER_BOTTOM@
-#define BARRIER_LEFT            @BARRIER_LEFT@
-#define BARRIER_RIGHT           @BARRIER_RIGHT@
-#define TOLL                    @TOLL@
-#define DIST_THRESH             100.f
-#define SCALE_X                 @SCALE_X@
-#define SCALE_Y                 @SCALE_Y@
-#define DIRECTION               @DIRECTION@
+#define MAX_NUM_PERSON          50                        // max size for array of person coords
+#define BARRIER_TOP             @BARRIER_TOP@             // in pixel units
+#define BARRIER_BOTTOM          @BARRIER_BOTTOM@          // in pixel units
+#define BARRIER_LEFT            @BARRIER_LEFT@            // in pixel units
+#define BARRIER_RIGHT           @BARRIER_RIGHT@           // in pixel units
+#define TOLL                    @TOLL@                    // half-thickness of barrier, in pixel
+#define MIN_DIST_THRESH         100.f                     // threshold on min coords dist, in pixel
+#define SCALE_X                 @SCALE_X@                 // metric scale factor in x
+#define SCALE_Y                 @SCALE_Y@                 // metric scale factor in y
+#define DIRECTION               "@DIRECTION@"             // set barrier orientation
 
 #ifdef VERBOSE
 #define MESSAGE(...)     fprintf(stdout, __VA_ARGS__)
@@ -63,13 +63,7 @@ double demo_time;
 #define MESSAGE_ERR(...)
 #endif
 
-static int person_name_index;
-static char person_label[] = "person";
-static int frame_num;
-
-static int infos_index;
-
-/******************** TRACKING *********************/
+// tracking
 static float old_coords[MAX_NUM_PERSON][2]; // swap variable for yolo
 static int old_size = 0; // size filled
 static int UP = 0; // counter ^
@@ -94,7 +88,8 @@ inline float distance(const float x1, const float x2, const float y1, const floa
 {
   return fsqrt((x1 - x2)*(x1 - x2)*scale_x + (y1 - y2)*(y1 - y2)*scale_y);
 }
-/******************** FLUX *********************/
+
+// flux
 #define P0                      @PP@
 #define P1                      @PM@
 static float FLUX_IN  = 0.0f;
@@ -110,8 +105,8 @@ static float uno_meno_p1 = 1.f - P1;
 static int old_n0; static int old_n1;
 static int old_n2; static int old_n3;
 static int na; static int nb;
-/***********************************************/
 
+// general
 typedef struct frame_info {
   double timestamp;
   int cnt_in, cnt_out;
@@ -119,14 +114,17 @@ typedef struct frame_info {
   int frame_number;
 } frame_info;
 static frame_info* infos;
-
-
+static int person_name_index;
+static char person_label[] = "person";
+static int frame_num;
+static int infos_index;
 static double tnow;
 static time_t tnow_t;
 static struct tm* tm_tnow;
 static char human_timenow[MAX_LINE_LEN];
 static char json_name[200];
 
+// thread functions
 void* fetch_in_thread(void* ptr)
 {
   int status = fill_image_from_stream(cap, buff[buff_index]);
@@ -199,7 +197,7 @@ void* detect_in_thread(void* ptr)
           for(j = 0; j < old_size; ++j) // loop over old person
           {
             dist     = distance(old_coords[j][0], x, old_coords[j][1], y, SCALE_X, SCALE_Y);
-            if(dist > DIST_THRESH) continue;
+            if(dist > MIN_DIST_THRESH) continue;
             mins     = (min_dist < dist) ? mins : j;
             min_dist = (min_dist < dist) ? min_dist : dist;
           }
@@ -207,12 +205,12 @@ void* detect_in_thread(void* ptr)
           if(DIRECTION == "UP_DOWN")
           {
             if (y < (BARRIER_TOP + BARRIER_BOTTOM)*.5f) ++na;
-            else ++nb;
+            else                                        ++nb;
           }
           else if(DIRECTION == "LEFT_RIGHT")
           {
             if (x < (BARRIER_LEFT + BARRIER_RIGHT)*.5f) ++na;
-            else ++nb;
+            else                                        ++nb;
           }
         } // end if in TRACKING ROI
 /************************ TRACKING ****************************/
