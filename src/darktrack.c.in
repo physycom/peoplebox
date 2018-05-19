@@ -173,8 +173,8 @@ void* detect_in_thread(void* ptr)
   strftime(human_timenow, MAX_LINE_LEN, "%D %X", tm_tnow);
 
   for (i = 0; i < nboxes; ++i) // loop over new detections
-      if (dets[i].prob[person_name_index] > demo_thresh) // if person
-        ++person_num;
+    if (dets[i].prob[person_name_index] > demo_thresh) // if person
+      ++person_num;
 
   /* people tracking */
   if(frame_num)
@@ -204,7 +204,7 @@ void* detect_in_thread(void* ptr)
             min_dist = (min_dist < dist) ? min_dist : dist;
           }
 /************************ FLUX ********************************/
-          if(strcmp(DIRECTION,"UP_DOWN") == 0)
+          if(strcmp(DIRECTION,"UP_DOWN") == 0)   // make a switch instead
           {
             if (y < (BARRIER_TOP + BARRIER_BOTTOM)*.5f) ++na;
             else                                        ++nb;
@@ -252,8 +252,8 @@ void* detect_in_thread(void* ptr)
   FLUX_IN  = x4;
   FLUX_OUT = x5;
 
-  old_size = person_num;
-  for( i = 0; i < old_size; ++i)
+  old_size = -1;
+  for( i = 0; i < nboxes; ++i)
     if (dets[i].prob[person_name_index] > demo_thresh) // if person
     {
       x = dets[i].bbox.x * buff[0].w; // bbox coords in [0, 1)
@@ -263,8 +263,9 @@ void* detect_in_thread(void* ptr)
           x > BARRIER_LEFT   - TOLL  &&
           x < BARRIER_RIGHT  + TOLL   ) // if in ROI
       {
-        old_coords[i][0] = x;
-        old_coords[i][1] = y;
+        ++old_size;
+        old_coords[old_size][0] = x;
+        old_coords[old_size][1] = y;
       }
     }
 
@@ -294,11 +295,12 @@ void* detect_in_thread(void* ptr)
   infos[infos_index].flux_in  += FLUX_IN;
   infos[infos_index].flux_out += FLUX_OUT;
 
-  if(frame_num % SAMPLING_FRAME_RATE == 0){ // every sampling dt
+  if(frame_num % SAMPLING_FRAME_RATE == 0){ // every sampling dt, store a RECORD
     infos[infos_index].timestamp = tnow;
     infos[infos_index].frame_number = frame_num;
     infos[infos_index].flux_in  /= SAMPLING_FRAME_RATE;
     infos[infos_index].flux_out /= SAMPLING_FRAME_RATE;
+
     UP = 0;
     DOWN = 0;
     LEFT = 0;
@@ -316,7 +318,6 @@ void* detect_in_thread(void* ptr)
     }
     fprintf(info_json, "{\n");
     for (i = 0; i < MAX_FRAME_INFO_TO_STORE; ++i) {
-//      if ( i%DOWNSAMPLING != 0 ) continue;  // downsample the actual data to one json per second
       fprintf(info_json, "\t\"frame_%05d\" : {\n", infos[i].frame_number);
       fprintf(info_json, "\t\t\"timestamp\" : %.3f,\n", infos[i].timestamp);
       fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", "@PEOPLEBOX_ID@");
@@ -324,23 +325,8 @@ void* detect_in_thread(void* ptr)
       fprintf(info_json, "\t\t\"sw_ver\" : %d,\n", SW_VER_TRACK);
       fprintf(info_json, "\t\t\"people_count\" : [{\"id\" : \"%s\", \"count\" : %d}, {\"id\" : \"%s\", \"count\" : %d}],\n", "@PEOPLEBOX_ID@-IN", infos[i].cnt_in, "@PEOPLEBOX_ID@-OUT", infos[i].cnt_out);
       fprintf(info_json, "\t\t\"people_flux\" : [{\"id\" : \"%s\", \"flux\" : %d}, {\"id\" : \"%s\", \"flux\" : %d}],\n", "@PEOPLEBOX_ID@-IN", infos[i].flux_in, "@PEOPLEBOX_ID@-OUT", infos[i].flux_out);
-      /*
-      if (infos[i].person_number) {
-        fprintf(info_json, "\t\t\"people_x\" : [ ");
-        for (j = 0; j < infos[i].person_number - 1; ++j)
-          fprintf(info_json, "%.3f, ", infos[i].x[j]);
-        fprintf(info_json, "%.3f ],\n", infos[i].x[j]);
-        fprintf(info_json, "\t\t\"people_y\" : [ ");
-        for (j = 0; j < infos[i].person_number - 1; ++j)
-          fprintf(info_json, "%.3f, ", infos[i].y[j]);
-        fprintf(info_json, "%.3f ],\n", infos[i].y[j]);
-      } else {
-        fprintf(info_json, "\t\t\"people_x\" : [-1.000],\n");
-        fprintf(info_json, "\t\t\"people_y\" : [-1.000],\n");
-      }
-      */
       fprintf(info_json, "\t\t\"diagnostics\" : [{\"id\" : \"coming\", \"value\" : \"soon\"}]\n");
-      (i < MAX_FRAME_INFO_TO_STORE-1 /*- DOWNSAMPLING*/) ? fprintf(info_json, "\t},\n") : fprintf(info_json, "\t}\n");
+      (i < MAX_FRAME_INFO_TO_STORE-1) ? fprintf(info_json, "\t},\n") : fprintf(info_json, "\t}\n");
     }
     fprintf(info_json, "}");
     fclose(info_json);
@@ -359,7 +345,8 @@ int main()
   int i;
   char* cfg = "darknet/cfg/yolov3.cfg";
   char* weights = "darknet/yolov3.weights";
-  char* filename = "rtsp://@CAMERA_CREDENTIALS@@@CAMERA_IP@:554/rtpstream/config1=u";
+  //char* filename = "rtsp://@CAMERA_CREDENTIALS@@@CAMERA_IP@:554/rtpstream/config1=u";
+  char* filename = "track.avi";
   char* name_list = "darknet/data/coco.names";
 
   demo_thresh = .5;
