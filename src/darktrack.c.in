@@ -35,7 +35,6 @@ double demo_time;
 #define FPS                     3                         // source fps
 #define SAMPLING_FRAME_RATE     (SAMPLING_DT_SEC * FPS)   // number of frames between records records
 
-#define PUNCTILIOUS                                       // enable console output (cool stuff)
 #define SW_VER_TRACK            204
 
 #define ERR_NO_FILE             111
@@ -266,7 +265,6 @@ void* detect_in_thread(void* ptr)
 
   ++frame_num;
 
-#ifdef PUNCTILIOUS
 #ifndef _WIN32
   MESSAGE("\033[2J"); /* clear the screen */
   MESSAGE("\033[1;1H"); /* move cursor to line 1 column 1 */
@@ -276,7 +274,11 @@ void* detect_in_thread(void* ptr)
   MESSAGE("Frame Number : %d\n", frame_num);
   MESSAGE("Puny humans  : %d\n", person_num);
   MESSAGE("FPS          : %.1f\n", fps);
-#endif
+  MESSAGE("BARRIER IN   : %d\n", @BARRIER_IN@);
+  MESSAGE("BARRIER OUT  : %d\n", @BARRIER_OUT@);
+  for(i = 0; i < old_size; ++i)
+    MESSAGE("COORDS %d (x, y)     : (%.3f, %.3f)\n", i, coords[i][0], coords[i][1]);
+
 
   infos[infos_index].cnt_in  += @BARRIER_IN@;
   infos[infos_index].cnt_out += @BARRIER_OUT@;
