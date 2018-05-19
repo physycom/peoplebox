@@ -286,6 +286,12 @@ void* detect_in_thread(void* ptr)
   if(frame_num % SAMPLING_FRAME_RATE == 0){ // every sampling dt
     infos[infos_index].timestamp = tnow;
     infos[infos_index].frame_number = frame_num;
+    infos[infos_index].flux_in  /= SAMPLING_FRAME_RATE;
+    infos[infos_index].flux_out /= SAMPLING_FRAME_RATE;
+    UP = 0;
+    DOWN = 0;
+    LEFT = 0;
+    RIGHT = 0;
     if( frame_num > 1000*MAX_FRAME_INFO_TO_STORE ) frame_num = 0; // because of json key padding
     ++infos_index;
   }
@@ -329,12 +335,6 @@ void* detect_in_thread(void* ptr)
     fclose(info_json);
     infos_index = 0;
     memset(infos, 0, MAX_FRAME_INFO_TO_STORE * sizeof(frame_info));
-    UP = 0;
-    DOWN = 0;
-    LEFT = 0;
-    RIGHT = 0;
-    FLUX_IN = 0;
-    FLUX_OUT = 0;
     MESSAGE("Info dumped to JSON\n");
   }
 
