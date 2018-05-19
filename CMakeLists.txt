@@ -58,6 +58,7 @@ foreach(jset IN LISTS jetson_settings)
 endforeach()
 
 add_custom_target(tools)
+add_custom_target(alltest)
 if(OpenCV_FOUND)
 
   # tools
@@ -81,5 +82,22 @@ if(OpenCV_FOUND)
   target_link_libraries(dump_frame ${OpenCV_LIBRARIES})
   install(TARGETS dump_frame DESTINATION ${CMAKE_SOURCE_DIR})
   add_dependencies(tools dump_frame)
+
+  # test
+  file(GLOB settings ${CMAKE_SOURCE_DIR}/src/boxvars/*.cmakevars_test)
+  file(GLOB test_src ${CMAKE_SOURCE_DIR}/src/*test*.c.in)
+  foreach(set IN LISTS settings)
+    include(${set})
+    get_filename_component(stag ${set} NAME_WE)
+    foreach(src IN LISTS test_src)
+      get_filename_component(ttag ${src} NAME_WE)
+      set(tgt ${ttag}_${stag})
+      configure_file(${src} ${CMAKE_SOURCE_DIR}/src/auto/${tgt}.c)
+      add_executable(${tgt} ${CMAKE_SOURCE_DIR}/src/auto/${tgt}.c)
+      target_link_libraries(${tgt} ${OpenCV_LIBRARIES} darknet_lib ${linked_libs} ${CMAKE_THREAD_LIBS_INIT})
+      install(TARGETS ${tgt} DESTINATION ${CMAKE_SOURCE_DIR})
+      add_dependencies(alltest ${tgt})
+    endforeach(src)
+  endforeach(set)
 
 endif()
