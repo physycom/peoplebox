@@ -247,7 +247,7 @@ void* detect_in_thread(void* ptr)
   FLUX_IN  = x4;
   FLUX_OUT = x5;
 
-  old_size = nboxes;
+  old_size = person_num;
   for( i = 0; i < old_size; ++i)
     if (dets[i].prob[person_name_index] > demo_thresh) // if person
     {
