@@ -26,7 +26,7 @@ static int demo_total = 0;
 double demo_time;
 
 // physycom add
-#define MAX_FRAME_INFO_TO_STORE 45                        // size of json output
+#define MAX_FRAME_INFO_TO_STORE 3                        // size of json output
 #define FRAME_NUMBER_TRACKING   5                         // ?
 #define DOWNSAMPLING            3                         // ?
 #define MAX_LINE_LEN            20                        // ?
