@@ -276,6 +276,10 @@ void* detect_in_thread(void* ptr)
   MESSAGE("FPS          : %.1f\n", fps);
   MESSAGE("BARRIER IN   : %d\n", @BARRIER_IN@);
   MESSAGE("BARRIER OUT  : %d\n", @BARRIER_OUT@);
+  MESSAGE("CNT_IN       : %d\n", infos[infos_index].cnt_in);
+  MESSAGE("CNT_OUT      : %d\n", infos[infos_index].cnt_out);
+  MESSAGE("FLUX_IN      : %d\n", infos[infos_index].flux_in);
+  MESSAGE("FLUX_OUT     : %d\n", infos[infos_index].flux_out);
   for(i = 0; i < old_size; ++i)
     MESSAGE("COORDS %d (x, y)     : (%.3f, %.3f)\n", i, old_coords[i][0], old_coords[i][1]);
 
