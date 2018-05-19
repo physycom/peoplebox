@@ -277,7 +277,7 @@ void* detect_in_thread(void* ptr)
   MESSAGE("BARRIER IN   : %d\n", @BARRIER_IN@);
   MESSAGE("BARRIER OUT  : %d\n", @BARRIER_OUT@);
   for(i = 0; i < old_size; ++i)
-    MESSAGE("COORDS %d (x, y)     : (%.3f, %.3f)\n", i, coords[i][0], coords[i][1]);
+    MESSAGE("COORDS %d (x, y)     : (%.3f, %.3f)\n", i, old_coords[i][0], old_coords[i][1]);
 
 
   infos[infos_index].cnt_in  += @BARRIER_IN@;
