@@ -290,8 +290,8 @@ void* detect_in_thread(void* ptr)
     MESSAGE("COORDS %d (x, y)     : (%.3f, %.3f)\n", i, old_coords[i][0], old_coords[i][1]);
 
 
-  infos[infos_index].cnt_in  += @BARRIER_IN@;
-  infos[infos_index].cnt_out += @BARRIER_OUT@;
+  infos[infos_index].cnt_in  = @BARRIER_IN@;
+  infos[infos_index].cnt_out = @BARRIER_OUT@;
   infos[infos_index].flux_in  += FLUX_IN;
   infos[infos_index].flux_out += FLUX_OUT;
 
