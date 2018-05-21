@@ -11,6 +11,7 @@ for indice in ${!nomi[*]}
 do
   nome="${nomi[$indice]}"
   indirizzo="${indirizzi[$indice]}"
+  camip="${cameraip[$indice]}"
   if [[ $nome = *"raspi"* ]]; then
     nomeuser=pi
     password=raspberry
@@ -18,20 +19,21 @@ do
     nomeuser=nvidia
     password=nvidia
   fi
-  echo "Milking frames from $nomeuser@$nome"
+  echo "****) Milking frames from $nomeuser@$nome"
 
-  for i in {1..1}; do
-    # sync dump_frame and setup
-    echo scp dump_frame "${nomeuser}"@"${nome}":"$WORKSPACE"
-    echo ssh "${nomeuser}"@"${nome}" mkdir -p "$WORKSPACE"frames
+  # sync dump_frame and setup
+  ssh "${nomeuser}"@"${nome}" scp -P 44450 venice@osmino.bo.infn.it:dump_frame Codice/peoplebox/
+  ssh "${nomeuser}"@"${nome}" chmod 755 Codice/peoplebox/dump_frame
+  ssh "${nomeuser}"@"${nome}" mkdir -p Codice/peoplebox/frames
 
+  for i in {1..30}; do
+    echo "---- Milking $i"
     # launch dump_frame with proper command line
-    echo ssh "${nomeuser}"@"${nome}" "$WORKSPACE"/dump_frame 2 rtsp://physycom:ohnounapassWORD55@${camip}:554/rtpstream/config1=u
+    ssh "${nomeuser}"@"${nome}" "cd Codice/peoplebox; ./dump_frame 50 rtsp://physycom:ohnounapassWORD55@${camip}:554/rtpstream/config1=u" >> milk.log
 
     # rsync output
-    frames=$(find "$WORKSPACE"/"frames" -type f -name "*.jpg")
-    if [[ $frames != "" ]]; then
-      echo $RSYNC --remove-source-files "${RSYNC_FLAGS}" -e "${server_SSH}" "$frames" "$server_user"@"$server_host":"$JSON_SYNC_PATH"
-    fi
+    local_user=nvidia
+    ssh "${nomeuser}"@"${nome}" "ssh -p $unibo_port -i \$HOME/.ssh/id_rsa $unibo_user@$unibo_host mkdir -p milk/$nome/frames$i"
+    ssh "${nomeuser}"@"${nome}" "$RSYNC --remove-source-files ${RSYNC_FLAGS} -e \"ssh -p $unibo_port -i \$HOME/.ssh/id_rsa\" Codice/peoplebox/frames/*.jpg $unibo_user@$unibo_host:milk/$nome/frames$i"
   done
 done
