@@ -88,9 +88,6 @@ inline float distance(const float x1, const float x2, const float y1, const floa
   return fsqrt((x1 - x2)*(x1 - x2)*scale_x + (y1 - y2)*(y1 - y2)*scale_y);
 }
 
-//int debug_in = 0;
-//int debug_out = 0;
-
 // flux
 #define P0                      @PP@
 #define P1                      @PM@
@@ -154,18 +151,6 @@ void* detect_in_thread(void* ptr)
     }
   }
 
-  // avg_predictions (the real difference between detect & detector!)
-  //count = 0;
-  //fill_cpu(demo_total, 0, avg, 1);
-  //for (j = 0; j < demo_frame; ++j)
-  //  axpy_cpu(demo_total, 1. / demo_frame, predictions[j], 1, avg, 1);
-  //for (i = 0; i < net->n; ++i) {
-  //  layer l = net->layers[i];
-  //  if (l.type == YOLO || l.type == REGION || l.type == DETECTION) {
-  //    memcpy(l.output, avg + count, sizeof(float) * l.outputs);
-  //    count += l.outputs;
-  //  }
-  //}
   detection* dets = get_network_boxes(net, buff[0].w, buff[0].h, demo_thresh, demo_hier, 0, 1, &nboxes);
 
   if (nms > 0)
@@ -225,9 +210,6 @@ void* detect_in_thread(void* ptr)
         DOWN  += (y > BARRIER_BOTTOM  && old_coords[mins][1] < BARRIER_BOTTOM) ? 1 : 0;
         LEFT  += (x < BARRIER_LEFT    && old_coords[mins][0] > BARRIER_LEFT)   ? 1 : 0;
         RIGHT += (x > BARRIER_RIGHT   && old_coords[mins][0] < BARRIER_RIGHT)  ? 1 : 0;
-
-        //debug_in   += (y < BARRIER_TOP     && old_coords[mins][1] > BARRIER_TOP)    ? 1 : 0;
-        //debug_out  += (y > BARRIER_BOTTOM  && old_coords[mins][1] < BARRIER_BOTTOM) ? 1 : 0;
 /**********************************************************/
       }
     }
@@ -287,15 +269,8 @@ void* detect_in_thread(void* ptr)
   MESSAGE("Frame Number : %d\n", frame_num);
   MESSAGE("Puny humans  : %d\n", person_num);
   MESSAGE("FPS          : %.1f\n", fps);
-  //MESSAGE("BARRIER IN   : %d\n", @BARRIER_IN@);
-  //MESSAGE("BARRIER OUT  : %d\n", @BARRIER_OUT@);
   MESSAGE("CNT_IN       : %d\n", infos[infos_index].cnt_in);
   MESSAGE("CNT_OUT      : %d\n", infos[infos_index].cnt_out);
-  //MESSAGE("FLUX_IN      : %d\n", infos[infos_index].flux_in);
-  //MESSAGE("FLUX_OUT     : %d\n", infos[infos_index].flux_out);
-  //MESSAGE("w %d   -    h %d\n", buff[0].w, buff[0].h);
-  //for(i = 0; i < old_size; ++i)
-  //  MESSAGE("COORDS %d (x, y)     : (%.3f, %.3f)\n", i, old_coords[i][0], old_coords[i][1]);
 
   infos[infos_index].cnt_in  = @BARRIER_IN@;
   infos[infos_index].cnt_out = @BARRIER_OUT@;
@@ -353,7 +328,6 @@ int main()
   char* cfg = "darknet/cfg/yolov3.cfg";
   char* weights = "darknet/yolov3.weights";
   char* filename = "rtsp://@CAMERA_CREDENTIALS@@@CAMERA_IP@:554/rtpstream/config1=u";
-  //char* filename = "track2.avi";
   char* name_list = "darknet/data/coco.names";
 
   demo_thresh = .5;
