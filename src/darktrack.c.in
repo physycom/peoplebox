@@ -26,14 +26,14 @@ static int demo_total = 0;
 double demo_time;
 
 // physycom add
-#define MAX_FRAME_INFO_TO_STORE 3                        // size of json output
+#define MAX_FRAME_INFO_TO_STORE 52                        // size of json output
 #define FRAME_NUMBER_TRACKING   5                         // ?
 #define DOWNSAMPLING            3                         // ?
 #define MAX_LINE_LEN            20                        // ?
 #define JSON_FOLDER             "data"                    // output folder
 #define SAMPLING_DT_SEC         5                         // dt between single records
 #define FPS                     3                         // source fps
-#define SAMPLING_FRAME_RATE     1 //(SAMPLING_DT_SEC * FPS)   // number of frames between records records
+#define SAMPLING_FRAME_RATE     1//(SAMPLING_DT_SEC * FPS)   // number of frames between records records
 
 #define SW_VER_TRACK            204
 
@@ -87,6 +87,9 @@ inline float distance(const float x1, const float x2, const float y1, const floa
 {
   return fsqrt((x1 - x2)*(x1 - x2)*scale_x + (y1 - y2)*(y1 - y2)*scale_y);
 }
+
+//int debug_in = 0;
+//int debug_out = 0;
 
 // flux
 #define P0                      @PP@
@@ -151,17 +154,18 @@ void* detect_in_thread(void* ptr)
     }
   }
 
-  count = 0;
-  fill_cpu(demo_total, 0, avg, 1);
-  for (j = 0; j < demo_frame; ++j)
-    axpy_cpu(demo_total, 1. / demo_frame, predictions[j], 1, avg, 1);
-  for (i = 0; i < net->n; ++i) {
-    layer l = net->layers[i];
-    if (l.type == YOLO || l.type == REGION || l.type == DETECTION) {
-      memcpy(l.output, avg + count, sizeof(float) * l.outputs);
-      count += l.outputs;
-    }
-  }
+  // avg_predictions (the real difference between detect & detector!)
+  //count = 0;
+  //fill_cpu(demo_total, 0, avg, 1);
+  //for (j = 0; j < demo_frame; ++j)
+  //  axpy_cpu(demo_total, 1. / demo_frame, predictions[j], 1, avg, 1);
+  //for (i = 0; i < net->n; ++i) {
+  //  layer l = net->layers[i];
+  //  if (l.type == YOLO || l.type == REGION || l.type == DETECTION) {
+  //    memcpy(l.output, avg + count, sizeof(float) * l.outputs);
+  //    count += l.outputs;
+  //  }
+  //}
   detection* dets = get_network_boxes(net, buff[0].w, buff[0].h, demo_thresh, demo_hier, 0, 1, &nboxes);
 
   if (nms > 0)
@@ -174,14 +178,7 @@ void* detect_in_thread(void* ptr)
 
   for (i = 0; i < nboxes; ++i) // loop over new detections
     if (dets[i].prob[person_name_index] > demo_thresh) // if person
-    {
-    //  printf("%d %d %f %f\n", frame_num, i, dets[i].bbox.x * buff[0].w, dets[i].bbox.y * buff[0].h);
       ++person_num;
-    }
-  //if(!person_num)
-  //{
-  //  printf("%d %d 0 0\n", frame_num, i);
-  //}
 
   /* people tracking */
   if(frame_num)
@@ -224,11 +221,13 @@ void* detect_in_thread(void* ptr)
         } // end if in TRACKING ROI
 /************************ TRACKING ****************************/
         if(mins == -1) continue; // no matches found
-        //printf("%d %f %d\n", frame_num, min_dist, mins);
         UP    += (y < BARRIER_TOP     && old_coords[mins][1] > BARRIER_TOP)    ? 1 : 0;
         DOWN  += (y > BARRIER_BOTTOM  && old_coords[mins][1] < BARRIER_BOTTOM) ? 1 : 0;
         LEFT  += (x < BARRIER_LEFT    && old_coords[mins][0] > BARRIER_LEFT)   ? 1 : 0;
         RIGHT += (x > BARRIER_RIGHT   && old_coords[mins][0] < BARRIER_RIGHT)  ? 1 : 0;
+
+        //debug_in   += (y < BARRIER_TOP     && old_coords[mins][1] > BARRIER_TOP)    ? 1 : 0;
+        //debug_out  += (y > BARRIER_BOTTOM  && old_coords[mins][1] < BARRIER_BOTTOM) ? 1 : 0;
 /**********************************************************/
       }
     }
@@ -276,7 +275,7 @@ void* detect_in_thread(void* ptr)
         old_coords[old_size][1] = y;
       }
     }
-
+  ++old_size; // REMEMBER REMEMBER : old_size must be greater than last index
   ++frame_num;
 
 #ifndef _WIN32
@@ -292,12 +291,11 @@ void* detect_in_thread(void* ptr)
   //MESSAGE("BARRIER OUT  : %d\n", @BARRIER_OUT@);
   MESSAGE("CNT_IN       : %d\n", infos[infos_index].cnt_in);
   MESSAGE("CNT_OUT      : %d\n", infos[infos_index].cnt_out);
-  MESSAGE("FLUX_IN      : %d\n", infos[infos_index].flux_in);
-  MESSAGE("FLUX_OUT     : %d\n", infos[infos_index].flux_out);
+  //MESSAGE("FLUX_IN      : %d\n", infos[infos_index].flux_in);
+  //MESSAGE("FLUX_OUT     : %d\n", infos[infos_index].flux_out);
   //MESSAGE("w %d   -    h %d\n", buff[0].w, buff[0].h);
   //for(i = 0; i < old_size; ++i)
   //  MESSAGE("COORDS %d (x, y)     : (%.3f, %.3f)\n", i, old_coords[i][0], old_coords[i][1]);
-
 
   infos[infos_index].cnt_in  = @BARRIER_IN@;
   infos[infos_index].cnt_out = @BARRIER_OUT@;
@@ -354,8 +352,8 @@ int main()
   int i;
   char* cfg = "darknet/cfg/yolov3.cfg";
   char* weights = "darknet/yolov3.weights";
-  //char* filename = "rtsp://@CAMERA_CREDENTIALS@@@CAMERA_IP@:554/rtpstream/config1=u";
-  char* filename = "track.avi";
+  char* filename = "rtsp://@CAMERA_CREDENTIALS@@@CAMERA_IP@:554/rtpstream/config1=u";
+  //char* filename = "track2.avi";
   char* name_list = "darknet/data/coco.names";
 
   demo_thresh = .5;
