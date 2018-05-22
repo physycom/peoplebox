@@ -26,16 +26,16 @@ static int demo_total = 0;
 double demo_time;
 
 // physycom add
-#define MAX_FRAME_INFO_TO_STORE 52                        // size of json output
+#define MAX_FRAME_INFO_TO_STORE 50                        // size of json output
 #define FRAME_NUMBER_TRACKING   5                         // ?
 #define DOWNSAMPLING            3                         // ?
 #define MAX_LINE_LEN            20                        // ?
 #define JSON_FOLDER             "data"                    // output folder
 #define SAMPLING_DT_SEC         5                         // dt between single records
 #define FPS                     3                         // source fps
-#define SAMPLING_FRAME_RATE     1//(SAMPLING_DT_SEC * FPS)   // number of frames between records records
+#define SAMPLING_FRAME_RATE     (SAMPLING_DT_SEC * FPS)   // number of frames between records records
 
-#define SW_VER_TRACK            204
+#define SW_VER_TRACK            601
 
 #define ERR_NO_FILE             111
 #define ERR_NO_STREAM           112
@@ -87,12 +87,12 @@ inline float distance(const float x1, const float x2, const float y1, const floa
 {
   return fsqrt((x1 - x2)*(x1 - x2)*scale_x + (y1 - y2)*(y1 - y2)*scale_y);
 }
-#define C0                      @C0@
-#define C1                      @C1@
-#define C2                      @C2@
-#define C3                      @C3@
-#define C4                      @C4@
-#define C5                      @C5@
+#define C0 @C0@  // coefficient of 5th grade polynomial
+#define C1 @C1@  // c_n multiplies x^n
+#define C2 @C2@
+#define C3 @C3@
+#define C4 @C4@
+#define C5 @C5@
 inline float fit(const int x){
   return C0 + C1 * x + C2 * x*x + C3 * x*x*x + C4 * x*x*x*x + C5 * x*x*x*x*x;
 }
