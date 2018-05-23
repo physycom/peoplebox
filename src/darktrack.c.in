@@ -35,7 +35,7 @@ double demo_time;
 #define FPS                     3                         // source fps
 #define SAMPLING_FRAME_RATE     (SAMPLING_DT_SEC * FPS)   // number of frames between records records
 
-#define SW_VER_TRACK            601
+#define SW_VER_TRACK            602
 
 #define ERR_NO_FILE             111
 #define ERR_NO_STREAM           112
