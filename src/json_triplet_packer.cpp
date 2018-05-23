@@ -19,10 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "jsoncons/json.hpp"
 
-#define SW_VER_CROWD 101
-#define NUMBER_OF_FILES 3
+#define SW_VER_CROWD      101
+#define NUMBER_OF_FILES   3
 
-class Json_data {
+class json_data {
   public:
   unsigned int timestamp;
   std::string id_box;
@@ -79,7 +79,7 @@ int main(int argc, char** argv)
   std::cout << std::endl
             << "Output: " << out_file << std::endl;
 
-  Json_data json_data[NUMBER_OF_FILES];
+  json_data jsondata[NUMBER_OF_FILES];
 
   int counter = 0;
   for (int i = 0; i < NUMBER_OF_FILES; ++i) {
@@ -91,29 +91,26 @@ int main(int argc, char** argv)
       continue;
     }
 
-    json_data[i].timestamp = in_json["timestamp"];
-    json_data[i].id_box = in_json["id_box"];
-    json_data[i].detection = in_json["detection"];
-    json_data[i].sw_ver = in_json["sw_ver"];
-    jsoncons::json in_people_count;
-    in_people_count = in_json["people_count"];
-    json_data[i].people_count = in_people_count["count"];
-    jsoncons::json in_diagnostics;
-    in_diagnostics = in_json["diagnostics"];
+    jsondata[i].timestamp = in_json["timestamp"].as<unsigned int>();
+    jsondata[i].id_box = in_json["id_box"].as<std::string>();
+    jsondata[i].detection = in_json["detection"].as<std::string>();
+    jsondata[i].sw_ver = in_json["sw_ver"].as<unsigned short>();
+    jsondata[i].people_count = in_json["people_count"]["count"].as<unsigned int>();
+    //jsoncons::json in_diagnostics = in_json["diagnostics"];
   }
 
-  unsigned int max_person_number = max_of_three(json_data[0].people_count, json_data[1].people_count, json_data[2].people_count);
-  unsigned int min_person_number = min_of_three(json_data[0].people_count, json_data[1].people_count, json_data[2].people_count);
+  unsigned int max_person_number = max_of_three(jsondata[0].people_count, jsondata[1].people_count, jsondata[2].people_count);
+  unsigned int min_person_number = min_of_three(jsondata[0].people_count, jsondata[1].people_count, jsondata[2].people_count);
 
   jsoncons::json out_json;
 
-  out_json["timestamp"] = json_data[0].timestamp;
-  out_json["id_box"] = json_data[0].id_box;
-  out_json["detection"] = json_data[0].detection;
+  out_json["timestamp"] = jsondata[0].timestamp;
+  out_json["id_box"] = jsondata[0].id_box;
+  out_json["detection"] = jsondata[0].detection;
   out_json["sw_ver"] = SW_VER_CROWD;
 
   jsoncons::json people_count;
-  people_count["id"] = json_data[0].id_box;
+  people_count["id"] = jsondata[0].id_box;
   people_count["count"] = max_person_number;
   out_json["people_count"] = people_count;
 

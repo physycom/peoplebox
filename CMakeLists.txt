@@ -50,9 +50,9 @@ endif()
 set(JSONCONS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/jsoncons/include)
 include_directories(${JSONCONS_INCLUDE_DIR})
 
-#add_executable(json_triplet_packer ${CMAKE_SOURCE_DIR}/src/json_triplet_packer.cpp)
-
 # crowd-counting
+add_executable(json_triplet_packer ${CMAKE_SOURCE_DIR}/src/json_triplet_packer.cpp)
+
 add_executable(darkcrowd ${CMAKE_SOURCE_DIR}/src/darkcrowd.c)
 target_link_libraries(darkcrowd darknet_lib ${CMAKE_THREAD_LIBS_INIT} ${linked_libs})
 install(TARGETS darkcrowd DESTINATION ${CMAKE_SOURCE_DIR})
