@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 3.1)
-project(peoplebox C CXX)
+project(peoplebox)
+
+enable_language(C)
+set (CMAKE_C_STANDARD 11)
+
+# C++ is required for CUDA activation, building and linking, if CUDA was not necessary C++ could be completely removed
+enable_language(CXX)
+set (CMAKE_CXX_STANDARD 14)
+
 
 if(EXISTS "$ENV{WORKSPACE}/sysconfig/cmake/physycom_config.cmake")
    message(STATUS "Enabling physycom settings")
@@ -38,6 +46,11 @@ endif()
 if(MSVC)
   list(APPEND linked_libs ${PTHREADS_LIBRARIES} wsock32 ws2_32)
 endif()
+
+set(JSONCONS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/jsoncons/include)
+include_directories(${JSONCONS_INCLUDE_DIR})
+
+add_executable(json_triplet_packer ${CMAKE_SOURCE_DIR}/src/json_triplet_packer.cpp)
 
 # crowd-counting
 add_executable(darkcrowd ${CMAKE_SOURCE_DIR}/src/darkcrowd.c)
