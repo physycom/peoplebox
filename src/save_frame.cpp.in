@@ -15,7 +15,7 @@
 #define SAMPLING_DT_SEC      300
 #define FRAME_SAMPLING_RATE  (CAM_FPS*SAMPLING_DT_SEC)
 
-#define SW_VER               106
+#define SW_VER               110
 
 int main(int argc, char** argv)
 {
@@ -49,6 +49,7 @@ int main(int argc, char** argv)
         exit(ERROR_DUMP_FRAME);
       }
 
+#if @ENABLE_TRIPLET@
       vcap >> frame;
       if (imwrite(frame_name + ".1.jpg", frame))
         std::cout << "Frame " << frame_cnt << ".1 (" << frame_name << ") dumped successfully" << std::endl;
@@ -64,6 +65,7 @@ int main(int argc, char** argv)
         std::cerr << "Unable to write frame" << std::endl;
         exit(ERROR_DUMP_FRAME);
       }
+#endif
     }
     else
       vcap.grab();

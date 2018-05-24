@@ -1,3 +1,4 @@
-set(PEOPLEBOX_ID       "SCHIAVONI")
-set(CAMERA_IP          "192.168.5.208")
-set(CAMERA_CREDENTIALS "physycom:ohnounapassWORD55")
+set(PEOPLEBOX_ID         "SCHIAVONI")
+set(CAMERA_IP            "192.168.5.208")
+set(CAMERA_CREDENTIALS   "physycom:ohnounapassWORD55")
+set(ENABLE_TRIPLET       0)

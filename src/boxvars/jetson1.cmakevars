@@ -1,6 +1,7 @@
 set(PEOPLEBOX_ID         "PAPADOPOLI")
 set(CAMERA_IP            "192.168.5.201")
 set(CAMERA_CREDENTIALS   "physycom:ohnounapassWORD55")
+set(ENABLE_TRIPLET       0)
 set(DETECTION_TYPE_TRACK "tracking")
 set(BARRIER_TOP          "0")
 set(BARRIER_BOTTOM       "1080")
