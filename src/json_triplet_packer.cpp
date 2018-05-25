@@ -70,7 +70,7 @@ int main(int argc, char** argv)
   input_files.push_back(std::string(argv[1]) + ".1.json");
   input_files.push_back(std::string(argv[1]) + ".2.json");
 
-  std::string out_file = std::string(argv[1]) + ".json ";
+  std::string out_file = std::string(argv[1]) + ".json";
 
   std::cout << "Packing: ";
   for (auto i : input_files)
