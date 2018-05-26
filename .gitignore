@@ -37,6 +37,7 @@ build/
 build_debug/
 bin/
 output/
+test/
 .vs/
 .vscode/
 *.weights
@@ -48,12 +49,11 @@ darknet_lib.dll
 darknet_cuda.lib
 libdarknet_cuda.a
 
-darkcrowd
-darkcrowd
 darktest_*
 darktest_*.exe
 darktrack_*
 darktrack_*.exe
+darkcrowd
 darkcrowd_*
 darkcrowd_*.exe
 save_frame_*
@@ -62,6 +62,8 @@ dump_stream
 dump_stream.exe
 dump_frame
 dump_frame.exe
+json_triplet_packer
+json_triplet_packer.exe
 
 src/auto/*
 *.avi

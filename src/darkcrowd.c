@@ -95,8 +95,8 @@ int min_of_three(int i, int j, int k)
 
 int main(int argc, char** argv)
 {
-  if (argc < 4) {
-    MESSAGE_ERR("Usage : %s path/to/input/img path/to/output/json location_tag\n", argv[0]);
+  if (argc != 5) {
+    MESSAGE_ERR("Usage : %s path/to/input/img path/to/output/json location_tag [unixtime]\n", argv[0]);
     exit(ERR_WRONG_COMMANDLINE);
   }
 
@@ -104,6 +104,7 @@ int main(int argc, char** argv)
   imgspath[0] = concat(argv[1], ".jpg");
   imgspath[1] = concat(argv[1], ".1.jpg");
   imgspath[2] = concat(argv[1], ".2.jpg");
+  MESSAGE("%s\n%s\n%s\n", imgspath[0], imgspath[1], imgspath[2]);
 
   int* person_num = malloc(NUMBER_OF_FILES_TO_ANALYZE * sizeof(int));
   person_num[0] = 0;
@@ -112,6 +113,18 @@ int main(int argc, char** argv)
 
   jsonpath = argv[2];
   loctag = argv[3];
+
+  if (argc == 5) {
+    tnow = atof(argv[4]);
+    tnow_t = (time_t)tnow;
+    tm_tnow = localtime(&tnow_t);
+    strftime(human_timenow, MAX_LINE_LEN, "%D %X", tm_tnow);
+  } else {
+    tnow = what_time_is_it_now();
+    tnow_t = (time_t)tnow;
+    tm_tnow = localtime(&tnow_t);
+    strftime(human_timenow, MAX_LINE_LEN, "%D %X", tm_tnow);
+  }
 
   int i;
   char* cfg = "darknet/cfg/yolov3.cfg";
@@ -154,14 +167,7 @@ int main(int argc, char** argv)
       if (dets[i].prob[person_name_index] > thresh)
         ++(person_num[i]);
 
-    tnow = what_time_is_it_now();
-    tnow_t = (time_t)tnow;
-    tm_tnow = localtime(&tnow_t);
-    strftime(human_timenow, MAX_LINE_LEN, "%D %X", tm_tnow);
-
 #ifdef VERBOSE
-    MESSAGE("UNIX  Time   : %.3f\n", tnow);
-    MESSAGE("Human Time   : %s\n", human_timenow);
     MESSAGE("Puny humans  : %d\n", person_num[i]);
 #endif
   }
