@@ -5,6 +5,7 @@ if [[ "$OSTYPE" == "darwin"* && "$1" == "gcc" ]]; then
  export CXX="/usr/local/bin/g++-7"
 fi
 
+./clean.sh
 #rm -rf build_debug
 mkdir -p build_debug
 cd build_debug

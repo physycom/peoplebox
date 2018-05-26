@@ -8,9 +8,9 @@ else
   remote="$1"
 fi
 
+./clean.sh
 mkdir -p build
 cd build
 cmake .. -DVERBOSE:BOOL=TRUE
 cmake --build . --target install
 cd ..
-

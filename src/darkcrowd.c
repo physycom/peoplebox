@@ -26,14 +26,14 @@ double demo_time;
 double now_time;
 
 /* physycom add */
-#define MAX_LINE_LEN               11
-#define ERR_NO_FILE                12
-#define ERR_NO_INPUT_IMAGE         13
-#define ERR_NO_INFO_JSON           14
-#define ERR_WRONG_COMMANDLINE      15
+#define MAX_LINE_LEN 11
+#define ERR_NO_FILE 12
+#define ERR_NO_INPUT_IMAGE 13
+#define ERR_NO_INFO_JSON 14
+#define ERR_WRONG_COMMANDLINE 15
 
 #define NUMBER_OF_FILES_TO_ANALYZE 3
-#define SW_VER_CROWD               102
+#define SW_VER_CROWD 102
 
 #ifdef VERBOSE
 #define MESSAGE(...) fprintf(stdout, __VA_ARGS__)
@@ -47,10 +47,9 @@ static int person_name_index;
 static char person_label[] = "person";
 
 typedef struct frame_info {
-  double timestamp;
+  unsigned int timestamp;
   unsigned int max_person_number;
   unsigned int min_person_number;
-  //unsigned int ave_person_number;
 } frame_info;
 static frame_info infos;
 
@@ -91,6 +90,12 @@ int min_of_three(int i, int j, int k)
   if (k < result)
     result = k;
   return result;
+}
+
+#define C0 3
+int fit(const unsigned int x)
+{
+  return C0 * x;
 }
 
 int main(int argc, char** argv)
@@ -168,7 +173,7 @@ int main(int argc, char** argv)
     MESSAGE("Puny humans  : %d\n", person_num[i]);
 #endif
   }
-  infos.timestamp = tnow;
+  infos.timestamp = (unsigned int)tnow;
   infos.max_person_number = max_of_three(person_num[0], person_num[1], person_num[2]);
   infos.min_person_number = min_of_three(person_num[0], person_num[1], person_num[2]);
   FILE* info_json = fopen(jsonpath, "w");
@@ -177,12 +182,12 @@ int main(int argc, char** argv)
     exit(ERR_NO_INFO_JSON);
   }
   fprintf(info_json, "{\n");
-  fprintf(info_json, "\t\t\"timestamp\" : %.3f,\n", infos.timestamp);
+  fprintf(info_json, "\t\t\"timestamp\" : %u,\n", infos.timestamp);
   fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", loctag);
   fprintf(info_json, "\t\t\"detection\" : \"%s\",\n", "crowd");
   fprintf(info_json, "\t\t\"sw_ver\" : %d,\n", SW_VER_CROWD);
-  fprintf(info_json, "\t\t\"people_count\" : [{\"id\" : \"%s\", \"count\" : %d}],\n", loctag, infos.max_person_number);
-  fprintf(info_json, "\t\t\"diagnostics\" : [{\"id\" : \"minimum_detected\", \"value\" : \"%d\"}]\n", infos.min_person_number);
+  fprintf(info_json, "\t\t\"people_count\" : [{\"id\" : \"%s\", \"count\" : %u}],\n", loctag, fit(infos.max_person_number));
+  fprintf(info_json, "\t\t\"diagnostics\" : [{\"id\" : \"minimum_detected\", \"value\" : \"%u\"}]\n", infos.min_person_number);
   fprintf(info_json, "}");
   fclose(info_json);
   MESSAGE("Info dumped to JSON\n");
