@@ -5,9 +5,9 @@ if [[ "$OSTYPE" == "darwin"* && "$1" == "gcc" ]]; then
  export CXX="/usr/local/bin/g++-7"
 fi
 
-rm -rf build_debug
+#rm -rf build_debug
 mkdir -p build_debug
 cd build_debug
-cmake .. -DCMAKE_BUILD_TYPE=Debug
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DVERBOSE:BOOL=TRUE
 cmake --build .
 cd ..

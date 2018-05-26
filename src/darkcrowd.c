@@ -13,8 +13,8 @@ static image buff[3];
 static image buff_letter[3];
 static int buff_index = 0;
 static CvCapture* cap;
-static float thresh = .5;
-static float hier_thresh = .5;
+static float thresh = .1;
+static float hier_thresh = .1;
 
 static int demo_frame = 3;
 static int demo_index = 0;
@@ -26,14 +26,14 @@ double demo_time;
 double now_time;
 
 /* physycom add */
-#define MAX_LINE_LEN 20
-#define ERR_NO_FILE 111
-#define ERR_NO_INPUT_IMAGE 222
-#define ERR_NO_INFO_JSON 333
-#define ERR_WRONG_COMMANDLINE 444
+#define MAX_LINE_LEN               11
+#define ERR_NO_FILE                12
+#define ERR_NO_INPUT_IMAGE         13
+#define ERR_NO_INFO_JSON           14
+#define ERR_WRONG_COMMANDLINE      15
 
 #define NUMBER_OF_FILES_TO_ANALYZE 3
-#define SW_VER_CROWD 101
+#define SW_VER_CROWD               102
 
 #ifdef VERBOSE
 #define MESSAGE(...) fprintf(stdout, __VA_ARGS__)
@@ -104,7 +104,6 @@ int main(int argc, char** argv)
   imgspath[0] = concat(argv[1], ".jpg");
   imgspath[1] = concat(argv[1], ".1.jpg");
   imgspath[2] = concat(argv[1], ".2.jpg");
-  MESSAGE("%s\n%s\n%s\n", imgspath[0], imgspath[1], imgspath[2]);
 
   int* person_num = malloc(NUMBER_OF_FILES_TO_ANALYZE * sizeof(int));
   person_num[0] = 0;
@@ -126,13 +125,11 @@ int main(int argc, char** argv)
     strftime(human_timenow, MAX_LINE_LEN, "%D %X", tm_tnow);
   }
 
-  int i;
+  int i, j;
   char* cfg = "darknet/cfg/yolov3.cfg";
   char* weights = "darknet/yolov3.weights";
   char* name_list = "darknet/data/coco.names";
 
-  thresh = .5;
-  hier_thresh = .5;
   demo_classes = 80;
 
   FILE* file = fopen(name_list, "r");
@@ -163,8 +160,8 @@ int main(int argc, char** argv)
     do_nms_sort(dets, nboxes, l.classes, 0.45);
 
     /* people counting */
-    for (i = 0; i < nboxes; ++i)
-      if (dets[i].prob[person_name_index] > thresh)
+    for (j = 0; j < nboxes; ++j)
+      if (dets[j].prob[person_name_index] > thresh)
         ++(person_num[i]);
 
 #ifdef VERBOSE

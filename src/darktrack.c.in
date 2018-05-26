@@ -71,7 +71,8 @@ static int LEFT = 0;                        // counter <
 static int RIGHT = 0;                       // counter >
 static float x, y, min_dist, dist;
 static int mins;
-inline float fsqrt(const float x)
+
+float fsqrt(const float x)
 {
   const float xhalf = 0.5f * x;
   union // get bits for floating value
@@ -83,7 +84,8 @@ inline float fsqrt(const float x)
   u.i = 0x5f3759df - (u.i >> 1);  // gives initial guess y0
   return x * u.x * (1.5f - xhalf * u.x * u.x);// Newton step, repeating increases accuracy
 }
-inline float distance(const float x1, const float x2, const float y1, const float y2, const float scale_x, const float scale_y)
+
+float distance(const float x1, const float x2, const float y1, const float y2, const float scale_x, const float scale_y)
 {
   return fsqrt((x1 - x2)*(x1 - x2)*scale_x + (y1 - y2)*(y1 - y2)*scale_y);
 }
@@ -93,7 +95,8 @@ inline float distance(const float x1, const float x2, const float y1, const floa
 #define C3 @C3@
 #define C4 @C4@
 #define C5 @C5@
-inline float fit(const int x){
+
+float fit(const int x){
   return C0 + C1 * x + C2 * x*x + C3 * x*x*x + C4 * x*x*x*x + C5 * x*x*x*x*x;
 }
 
