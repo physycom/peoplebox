@@ -6,6 +6,7 @@
 #define MESSAGE_ERR(...)
 #endif
 
+#define ERR_WRONG_CLI           10
 #define ERR_NO_FILE             11
 #define ERR_NO_STREAM           12
 #define ERR_NO_INFO_JSON        13

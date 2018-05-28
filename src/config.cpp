@@ -3,14 +3,8 @@
 #include <map>
 #include <config.h>
 
-enum{
-  up,
-  down,
-  left,
-  right
-};
-
-std::map<std::string, int> direction_map ={
+std::map<std::string, int> direction_map =
+{
   {"UP", up},
   {"DOWN", down},
   {"LEFT", left},
@@ -94,11 +88,11 @@ config parse_config_file(const char *filename)
       }
       else if( key == "BARRIER_IN" )
       {
-        sprintf(cfg.BARRIER_IN, "%s", value.c_str());
+        cfg.BARRIER_IN = direction_map[value];
       }
       else if( key == "BARRIER_OUT" )
       {
-        sprintf(cfg.BARRIER_OUT, "%s", value.c_str());
+        cfg.BARRIER_OUT = direction_map[value];
       }
       else if ( key == "C0" )
       {
@@ -186,8 +180,16 @@ void print_config(const config cfg)
   std::cout << "CAMERA_IP               : " << cfg.CAMERA_IP << std::endl;
   std::cout << "CAMERA_CREDENTIALS      : " << cfg.CAMERA_CREDENTIALS << std::endl;
   std::cout << "DETECTION_TYPE_TRACK    : " << cfg.DETECTION_TYPE_TRACK << std::endl;
-  std::cout << "BARRIER_IN              : " << cfg.BARRIER_IN << std::endl;
-  std::cout << "BARRIER_OUT             : " << cfg.BARRIER_OUT << std::endl;
+  std::cout << "BARRIER_IN              : " <<
+  std::find_if(direction_map.begin(), direction_map.end(), [&cfg](const std::pair<std::string,int> &p){
+    return cfg.BARRIER_IN == p.second;
+  })->first
+  << std::endl;
+  std::cout << "BARRIER_OUT             : " <<
+  std::find_if(direction_map.begin(), direction_map.end(), [&cfg](const std::pair<std::string,int> &p){
+    return cfg.BARRIER_OUT == p.second;
+  })->first
+  << std::endl;
   std::cout << "DIRECTION               : " << cfg.DIRECTION << std::endl;
   std::cout << "C0                      : " << cfg.C0 << std::endl;
   std::cout << "C1                      : " << cfg.C1 << std::endl;

@@ -13,8 +13,8 @@ typedef struct config{
   float DIST_THRESH;
   float SCALE_X;
   float SCALE_Y;
-  char BARRIER_IN[MAX_LEN];
-  char BARRIER_OUT[MAX_LEN];
+  int BARRIER_IN;
+  int BARRIER_OUT;
   // box
   int DIRECTION;
   char PEOPLEBOX_ID[MAX_LEN];
@@ -36,6 +36,13 @@ typedef struct config{
   int SAMPLING_DT_SEC;
   int FPS;
 } config;
+
+enum{
+  up,
+  down,
+  left,
+  right
+};
 
 #ifdef __cplusplus
 extern "C" {

@@ -21,10 +21,15 @@ void init_yolo(const config cfg);
 void* fetch(void* ptr);
 void* detect(void* ptr);
 
-int main()
+int main(int argc, char** argv)
 {
-  char *cfgname = "dark.cfg";
-  config cfg = parse_config_file(cfgname);
+  if( argc < 2 )
+  {
+    MESSAGE("Usage : %s path/to/config", argv[0]);
+    exit(ERR_WRONG_CLI);
+  }
+
+  config cfg = parse_config_file(argv[1]);
   print_config(cfg);
 
   init_yolo(cfg);

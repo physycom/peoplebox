@@ -246,8 +246,21 @@ void* detect(void* ptr)
   MESSAGE("Puny humans  : %d\n",   person_num);
   MESSAGE("FPS          : %.1f\n", fps);
 
-//  infos[infos_index].cnt_in  += @BARRIER_IN@;
-//  infos[infos_index].cnt_out += @BARRIER_OUT@;
+  switch(cfg->BARRIER_IN)
+  {
+    case up:    infos[infos_index].cnt_in = UP;    break;
+    case down:  infos[infos_index].cnt_in = DOWN;  break;
+    case left:  infos[infos_index].cnt_in = LEFT;  break;
+    case right: infos[infos_index].cnt_in = RIGHT; break;
+  }
+
+  switch(cfg->BARRIER_OUT)
+  {
+    case up:    infos[infos_index].cnt_out = UP;    break;
+    case down:  infos[infos_index].cnt_out = DOWN;  break;
+    case left:  infos[infos_index].cnt_out = LEFT;  break;
+    case right: infos[infos_index].cnt_out = RIGHT; break;
+  }
 
   if(frame_num % (cfg->SAMPLING_DT_SEC * cfg->FPS) == 0){ // every sampling dt in frame units
     infos[infos_index].timestamp = tnow;
