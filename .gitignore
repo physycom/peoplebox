@@ -50,14 +50,12 @@ libdarknet_cuda.a
 
 darkcrowd
 darkcrowd
-darktest_*
-darktest_*.exe
-darktrack_*
-darktrack_*.exe
-darkcrowd_*
-darkcrowd_*.exe
-save_frame_*
-save_frame_*.exe
+darktrack
+darktrack.exe
+darkcrowd
+darkcrowd.exe
+save_frame
+save_frame.exe
 dump_stream
 dump_stream.exe
 dump_frame
