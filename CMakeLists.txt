@@ -47,18 +47,9 @@ target_link_libraries(darkcrowd darknet_lib ${CMAKE_THREAD_LIBS_INIT} ${linked_l
 install(TARGETS darkcrowd DESTINATION ${CMAKE_SOURCE_DIR})
 
 # tracking
-add_custom_target(tracking)
-file(GLOB jetson_settings ${CMAKE_SOURCE_DIR}/src/boxvars/jetson*.cmakevars)
-foreach(jset IN LISTS jetson_settings)
-  include(${jset})
-  get_filename_component(tag ${jset} NAME_WE)
-  configure_file(${CMAKE_SOURCE_DIR}/src/darktrack.c.in ${CMAKE_SOURCE_DIR}/src/auto/darktrack_${tag}.c)
-  configure_file(${CMAKE_SOURCE_DIR}/src/common.c.in ${CMAKE_SOURCE_DIR}/src/auto/common_${tag}.c)
-  add_executable(darktrack_${tag} ${CMAKE_SOURCE_DIR}/src/auto/darktrack_${tag}.c ${CMAKE_SOURCE_DIR}/src/auto/common_${tag}.c)
-  target_link_libraries(darktrack_${tag} darknet_lib ${linked_libs} ${CMAKE_THREAD_LIBS_INIT})
-  install(TARGETS darktrack_${tag} DESTINATION ${CMAKE_SOURCE_DIR})
-  add_dependencies(tracking darktrack_${tag})
-endforeach()
+add_library(config ${CMAKE_SOURCE_DIR}/src/config.cpp)
+add_executable(darktest ${CMAKE_SOURCE_DIR}/src/darktest.c ${CMAKE_SOURCE_DIR}/src/tracking.c)
+target_link_libraries(darktest config darknet_lib ${linked_libs})
 
 add_custom_target(tools)
 add_custom_target(tracktest)
@@ -85,16 +76,5 @@ if(OpenCV_FOUND)
   target_link_libraries(dump_frame ${OpenCV_LIBRARIES})
   install(TARGETS dump_frame DESTINATION ${CMAKE_SOURCE_DIR})
   add_dependencies(tools dump_frame)
-
-  # test
-  foreach(set IN LISTS jetson_settings)
-    include(${set})
-    get_filename_component(stag ${set} NAME_WE)
-    configure_file(${CMAKE_SOURCE_DIR}/src/darktest.c.in ${CMAKE_SOURCE_DIR}/src/auto/darktest_${stag}.c)
-    add_executable(darktest_${stag} ${CMAKE_SOURCE_DIR}/src/auto/darktest_${stag}.c ${CMAKE_SOURCE_DIR}/src/auto/common_${stag}.c)
-    target_link_libraries(darktest_${stag} ${OpenCV_LIBRARIES} darknet_lib ${linked_libs} ${CMAKE_THREAD_LIBS_INIT})
-    install(TARGETS darktest_${stag} DESTINATION ${CMAKE_SOURCE_DIR})
-    add_dependencies(tracktest darktest_${stag})
-  endforeach(set)
 
 endif()
