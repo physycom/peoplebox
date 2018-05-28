@@ -26,14 +26,14 @@ double demo_time;
 double now_time;
 
 /* physycom add */
-#define MAX_LINE_LEN 11
-#define ERR_NO_FILE 12
-#define ERR_NO_INPUT_IMAGE 13
-#define ERR_NO_INFO_JSON 14
-#define ERR_WRONG_COMMANDLINE 15
+#define MAX_LINE_LEN                 11
+#define ERR_NO_FILE                  12
+#define ERR_NO_INPUT_IMAGE           13
+#define ERR_NO_INFO_JSON             14
+#define ERR_WRONG_COMMANDLINE        15
 
-#define NUMBER_OF_FILES_TO_ANALYZE 3
-#define SW_VER_CROWD 102
+#define NUMBER_OF_FILES_TO_ANALYZE   3
+#define SW_VER_CROWD                 103
 
 #ifdef VERBOSE
 #define MESSAGE(...) fprintf(stdout, __VA_ARGS__)
@@ -100,8 +100,8 @@ int fit(const unsigned int x)
 
 int main(int argc, char** argv)
 {
-  if (argc != 5) {
-    MESSAGE_ERR("Usage : %s path/to/input/img path/to/output/json location_tag [unixtime]\n", argv[0]);
+  if (argc != 4 && argc != 5) {
+    MESSAGE_ERR("Usage : %s path/to/input/img_basename path/to/output/json location_tag [unixtime]\n", argv[0]);
     exit(ERR_WRONG_COMMANDLINE);
   }
 
@@ -182,12 +182,14 @@ int main(int argc, char** argv)
     exit(ERR_NO_INFO_JSON);
   }
   fprintf(info_json, "{\n");
+  fprintf(info_json, "\t\"frame_00000\" : {\n");
   fprintf(info_json, "\t\t\"timestamp\" : %u,\n", infos.timestamp);
   fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", loctag);
   fprintf(info_json, "\t\t\"detection\" : \"%s\",\n", "crowd");
   fprintf(info_json, "\t\t\"sw_ver\" : %d,\n", SW_VER_CROWD);
   fprintf(info_json, "\t\t\"people_count\" : [{\"id\" : \"%s\", \"count\" : %u}],\n", loctag, fit(infos.max_person_number));
   fprintf(info_json, "\t\t\"diagnostics\" : [{\"id\" : \"minimum_detected\", \"value\" : \"%u\"}]\n", infos.min_person_number);
+  fprintf(info_json, "\t}\n");
   fprintf(info_json, "}");
   fclose(info_json);
   MESSAGE("Info dumped to JSON\n");

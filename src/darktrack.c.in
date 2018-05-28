@@ -26,16 +26,14 @@ static int demo_total = 0;
 double demo_time;
 
 // physycom add
-#define MAX_FRAME_INFO_TO_STORE 50                        // size of json output
-#define FRAME_NUMBER_TRACKING   5                         // ?
-#define DOWNSAMPLING            3                         // ?
-#define MAX_LINE_LEN            20                        // ?
+#define MAX_FRAME_INFO_TO_STORE 10                        // size of json output
+#define MAX_LINE_LEN            20                        // static char buffer size
 #define JSON_FOLDER             "data"                    // output folder
 #define SAMPLING_DT_SEC         5                         // dt between single records
 #define FPS                     3                         // source fps
-#define SAMPLING_FRAME_RATE     (SAMPLING_DT_SEC * FPS)   // number of frames between records records
+#define SAMPLING_FRAME_RATE     (SAMPLING_DT_SEC * FPS)   // number of frames between records
 
-#define SW_VER_TRACK            602
+#define SW_VER_TRACK            603
 
 #define ERR_NO_FILE             111
 #define ERR_NO_STREAM           112
