@@ -50,21 +50,14 @@ install(TARGETS darkcrowd DESTINATION ${CMAKE_SOURCE_DIR})
 add_library(config ${CMAKE_SOURCE_DIR}/src/config.cpp)
 add_executable(darktrack ${CMAKE_SOURCE_DIR}/src/darktrack.c ${CMAKE_SOURCE_DIR}/src/tracking.c)
 target_link_libraries(darktrack config darknet_lib ${linked_libs})
+install(TARGETS darktrack DESTINATION ${CMAKE_SOURCE_DIR})
 
+# tools
 add_custom_target(tools)
 if(OpenCV_FOUND)
-
-  # tools
-  file(GLOB settings ${CMAKE_SOURCE_DIR}/src/boxvars/*.cmakevars)
-  foreach(set IN LISTS settings)
-    include(${set})
-    get_filename_component(tag ${set} NAME_WE)
-    configure_file(${CMAKE_SOURCE_DIR}/src/save_frame.cpp.in ${CMAKE_SOURCE_DIR}/src/auto/save_frame_${tag}.cpp)
-    add_executable(save_frame_${tag} ${CMAKE_SOURCE_DIR}/src/auto/save_frame_${tag}.cpp)
-    target_link_libraries(save_frame_${tag} ${OpenCV_LIBRARIES})
-    install(TARGETS save_frame_${tag} DESTINATION ${CMAKE_SOURCE_DIR})
-    add_dependencies(tools save_frame_${tag})
-  endforeach()
+  add_executable(save_frame ${CMAKE_SOURCE_DIR}/src/save_frame.cpp)
+  target_link_libraries(save_frame config ${linked_libs})
+  install(TARGETS save_frame DESTINATION ${CMAKE_SOURCE_DIR})
 
   add_executable(dump_stream ${CMAKE_SOURCE_DIR}/src/dump_stream.cpp)
   target_link_libraries(dump_stream ${OpenCV_LIBRARIES})
@@ -75,5 +68,4 @@ if(OpenCV_FOUND)
   target_link_libraries(dump_frame ${OpenCV_LIBRARIES})
   install(TARGETS dump_frame DESTINATION ${CMAKE_SOURCE_DIR})
   add_dependencies(tools dump_frame)
-
 endif()

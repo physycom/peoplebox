@@ -34,7 +34,9 @@ typedef struct config{
   int FRAME_NUMBER_TRACKING;
   char JSON_FOLDER[MAX_LEN];
   int SAMPLING_DT_SEC;
-  int FPS;
+  int CAM_FPS;
+  // save_frame
+  char IMAGE_FOLDER[MAX_LEN];
 } config;
 
 enum{

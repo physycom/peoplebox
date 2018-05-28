@@ -10,5 +10,7 @@
 #define ERR_NO_FILE             11
 #define ERR_NO_STREAM           12
 #define ERR_NO_INFO_JSON        13
-#define ERR_THREAD_CREATION     22
-#define ERR_NO_NAMELIST_FILE    33
+#define ERR_THREAD_CREATION     20
+#define ERR_NO_NAMELIST_FILE    30
+
+#define ERR_WRITING_SAVED_FRAME 40

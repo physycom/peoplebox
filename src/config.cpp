@@ -130,13 +130,18 @@ config parse_config_file(const char *filename)
       {
         cfg.SAMPLING_DT_SEC = std::stoi(value);
       }
-      else if ( key == "FPS" )
+      else if ( key == "CAM_FPS" )
       {
-        cfg.FPS = std::stoi(value);
+        cfg.CAM_FPS = std::stoi(value);
       }
       else if ( key == "JSON_FOLDER" )
       {
         sprintf(cfg.JSON_FOLDER, "%s", value.c_str());
+      }
+      // save_frame
+      else if ( key == "IMAGE_FOLDER" )
+      {
+        sprintf(cfg.IMAGE_FOLDER, "%s", value.c_str());
       }
       else
       {
@@ -199,6 +204,7 @@ void print_config(const config cfg)
   std::cout << "C5                      : " << cfg.C5 << std::endl;
   std::cout << "MAX_FRAME_INFO_TO_STORE : " << cfg.MAX_FRAME_INFO_TO_STORE << std::endl;
   std::cout << "FRAME_NUMBER_TRACKING   : " << cfg.FRAME_NUMBER_TRACKING << std::endl;
-  std::cout << "FPS                     : " << cfg.FPS << std::endl;
+  std::cout << "CAM_FPS                 : " << cfg.CAM_FPS << std::endl;
   std::cout << "JSON_FOLDER             : " << cfg.JSON_FOLDER << std::endl;
+  std::cout << "IMAGE_FOLDER            : " << cfg.IMAGE_FOLDER << std::endl;
 }

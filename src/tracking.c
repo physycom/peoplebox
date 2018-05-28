@@ -262,7 +262,7 @@ void* detect(void* ptr)
     case right: infos[infos_index].cnt_out = RIGHT; break;
   }
 
-  if(frame_num % (cfg->SAMPLING_DT_SEC * cfg->FPS) == 0){ // every sampling dt in frame units
+  if(frame_num % (cfg->SAMPLING_DT_SEC * cfg->CAM_FPS) == 0){ // every sampling dt in frame units
     infos[infos_index].timestamp = tnow;
     infos[infos_index].frame_number = frame_num;
     if( frame_num > 1000*cfg->MAX_FRAME_INFO_TO_STORE ) frame_num = 0; // because of json key padding

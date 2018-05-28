@@ -5,48 +5,45 @@
 #include <fstream>
 #include <thread>
 
-#define ERROR_VIDEO_STREAM   1
-#define ERROR_DUMP_FRAME     2
+#include <support.h>
+#include <config.h>
 
-#define IMAGE_DUMP_DT_SEC    300
-#define IMAGE_FOLDER         "images"
-
-#define CAM_FPS              3
-#define SAMPLING_DT_SEC      300
-#define FRAME_SAMPLING_RATE  (CAM_FPS*SAMPLING_DT_SEC)
-
-#define SW_VER               106
+#define SW_VER 1000
 
 int main(int argc, char** argv)
 {
-  std::string input;
-  if (argc > 1)
-    input = argv[1];
-  else
-    input = "rtsp://@CAMERA_CREDENTIALS@@@CAMERA_IP@:554/rtpstream/config1=u";
+  if( argc < 2 )
+  {
+    std::cerr << "Usage : " << argv[0] << " path/to/config" << std::endl;
+    exit(ERR_WRONG_CLI);
+  }
+
+  config cfg = parse_config_file(argv[1]);
+  print_config(cfg);
+
 
   std::ofstream swver("save_frame.sw_ver");
   swver << std::time(0) << std::endl << SW_VER << std::endl;
   swver.close();
 
-  cv::VideoCapture vcap(input);
+  cv::VideoCapture vcap(cfg.FILENAME);
   if (!vcap.isOpened()) {
-    std::cerr << "Error opening video stream or file : " << input << std::endl;
-    exit(ERROR_VIDEO_STREAM);
+    std::cerr << "Error opening video stream or file : " << cfg.FILENAME << std::endl;
+    exit(ERR_NO_STREAM);
   }
 
   cv::Mat frame;
   std::string frame_name;
   int frame_cnt = 0;
   for (;;) {
-    if( frame_cnt % FRAME_SAMPLING_RATE == 0 ){
+    if( frame_cnt % (cfg.SAMPLING_DT_SEC * cfg.CAM_FPS) == 0 ){
       vcap >> frame;
-      frame_name = std::string(IMAGE_FOLDER) + "/@PEOPLEBOX_ID@_" + std::to_string(std::time(0));
+      frame_name = std::string(cfg.IMAGE_FOLDER) + "/" + cfg.PEOPLEBOX_ID + "_" + std::to_string(std::time(0));
       if (imwrite(frame_name + ".jpg", frame))
         std::cout << "Frame " << frame_cnt << " (" << frame_name << ") dumped successfully" << std::endl;
       else {
         std::cerr << "Unable to write frame" << std::endl;
-        exit(ERROR_DUMP_FRAME);
+        exit(ERR_WRITING_SAVED_FRAME);
       }
 
       vcap >> frame;
@@ -54,7 +51,7 @@ int main(int argc, char** argv)
         std::cout << "Frame " << frame_cnt << ".1 (" << frame_name << ") dumped successfully" << std::endl;
       else {
         std::cerr << "Unable to write frame" << std::endl;
-        exit(ERROR_DUMP_FRAME);
+        exit(ERR_WRITING_SAVED_FRAME);
       }
 
       vcap >> frame;
@@ -62,7 +59,7 @@ int main(int argc, char** argv)
         std::cout << "Frame " << frame_cnt << ".2 (" << frame_name << ") dumped successfully" << std::endl;
       else {
         std::cerr << "Unable to write frame" << std::endl;
-        exit(ERROR_DUMP_FRAME);
+        exit(ERR_WRITING_SAVED_FRAME);
       }
     }
     else
