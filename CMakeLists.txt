@@ -48,11 +48,10 @@ install(TARGETS darkcrowd DESTINATION ${CMAKE_SOURCE_DIR})
 
 # tracking
 add_library(config ${CMAKE_SOURCE_DIR}/src/config.cpp)
-add_executable(darktest ${CMAKE_SOURCE_DIR}/src/darktest.c ${CMAKE_SOURCE_DIR}/src/tracking.c)
-target_link_libraries(darktest config darknet_lib ${linked_libs})
+add_executable(darktrack ${CMAKE_SOURCE_DIR}/src/darktrack.c ${CMAKE_SOURCE_DIR}/src/tracking.c)
+target_link_libraries(darktrack config darknet_lib ${linked_libs})
 
 add_custom_target(tools)
-add_custom_target(tracktest)
 if(OpenCV_FOUND)
 
   # tools
