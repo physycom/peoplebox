@@ -131,10 +131,6 @@ config parse_config_file(const char *filename)
       {
         cfg.MAX_FRAME_INFO_TO_STORE = std::stoi(value);
       }
-      else if ( key == "FRAME_NUMBER_TRACKING" )
-      {
-        cfg.FRAME_NUMBER_TRACKING = std::stoi(value);
-      }
       else if ( key == "SAMPLING_DT_SEC" )
       {
         cfg.SAMPLING_DT_SEC = std::stoi(value);
