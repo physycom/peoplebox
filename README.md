@@ -9,3 +9,5 @@ author: "Curti, Fabbri, Sinigardi"
 <img src="https://cdn.rawgit.com/physycom/templates/697b327d/logo_unibo.png" width="90" height="90" alt="© Physics of Complex Systems Laboratory - Physics and Astronomy Department - University of Bologna">
 </div>
 </a>
+
+[![Build Status](https://travis-ci.org/physycom/peoplebox.svg?branch=master)](https://travis-ci.org/physycom/peoplebox)
