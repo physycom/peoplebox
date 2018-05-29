@@ -1,8 +1,8 @@
 #!/bin/bash
 
 if [[ "$OSTYPE" == "darwin"* && "$1" == "gcc" ]]; then
-  export CC="/usr/local/bin/gcc-7"
-  export CXX="/usr/local/bin/g++-7"
+  export CC="/usr/local/bin/gcc-8"
+  export CXX="/usr/local/bin/g++-8"
   remote="$2"
 else
   remote="$1"
