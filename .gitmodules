@@ -4,7 +4,7 @@
 	branch = dev/cenit/yolov3
 [submodule "src/boxvars"]
 	path = src/boxvars
-	url = https://github.com/physycom/peoplebox-vars.git
+	url = https://github.com/physycom/peoplebox-vars
 [submodule "jsoncons"]
 	path = jsoncons
 	url = https://github.com/danielaparker/jsoncons

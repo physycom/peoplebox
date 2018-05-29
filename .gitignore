@@ -70,5 +70,4 @@ src/auto/*
 images/
 *.sw_ver
 script/*json
-src/boxvars/*
 
