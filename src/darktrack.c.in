@@ -133,10 +133,42 @@ static struct tm* tm_tnow;
 static char human_timenow[MAX_LINE_LEN];
 static char json_name[200];
 
+// image manipulation
+image get_rotated_image_from_stream(CvCapture* cap)
+{
+  IplImage* src = cvQueryFrame(cap);
+  if (!src)
+    return make_empty_image(0, 0, 0);
+  IplImage* trans = cvCreateImage(cvSize(src->height, src->width), src->depth, src->nChannels);
+  cvTranspose(src, trans);  // transposition +
+  cvFlip(trans, trans, 0);    // hor flip = 90 counterclockwise rotation
+  image im = ipl_to_image(trans);
+  rgbgr_image(im);
+  return im;
+}
+
+int fill_rotated_image_from_stream(CvCapture* cap, image im)
+{
+  IplImage* src = cvQueryFrame(cap);
+  if (!src)
+    return 0;
+  IplImage* trans = cvCreateImage(cvSize(src->height, src->width), src->depth, src->nChannels);
+  cvTranspose(src, trans);  // transposition +
+  cvFlip(trans, trans, 0);    // hor flip = 90 counterclockwise rotation
+  ipl_into_image(trans, im);
+  rgbgr_image(im);
+  return 1;
+}
+
 // thread functions
 void* fetch_in_thread(void* ptr)
 {
+#if @ROTATE_90_COUNTER@
+  int status = fill_rotated_image_from_stream(cap, buff[buff_index]);
+#else
   int status = fill_image_from_stream(cap, buff[buff_index]);
+#endif
+
   letterbox_image_into(buff[buff_index], net->w, net->h, buff_letter[buff_index]);
   if (status == 0) {
     MESSAGE_ERR("fill_image_from_stream() failed to load frame\n");
@@ -387,7 +419,11 @@ int main()
     exit(ERR_NO_STREAM);
   }
 
+#if @ROTATE_90_COUNTER@
+  buff[0] = get_rotated_image_from_stream(cap);
+#else
   buff[0] = get_image_from_stream(cap);
+#endif
   buff[1] = copy_image(buff[0]);
   buff[2] = copy_image(buff[0]);
   buff_letter[0] = letterbox_image(buff[0], net->w, net->h);

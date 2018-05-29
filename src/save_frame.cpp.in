@@ -41,6 +41,10 @@ int main(int argc, char** argv)
   for (;;) {
     if( frame_cnt % FRAME_SAMPLING_RATE == 0 ){
       vcap >> frame;
+#if @ROTATE_90_COUNTER@
+      cv::transpose(frame, frame);
+      cv::flip(frame, frame, 0);
+#endif
       frame_name = std::string(IMAGE_FOLDER) + "/@PEOPLEBOX_ID@_" + std::to_string(std::time(0));
       if (imwrite(frame_name + ".jpg", frame))
         std::cout << "Frame " << frame_cnt << " (" << frame_name << ") dumped successfully" << std::endl;
@@ -51,6 +55,10 @@ int main(int argc, char** argv)
 
 #if @ENABLE_TRIPLET@
       vcap >> frame;
+#if @ROTATE_90_COUNTER@
+      cv::transpose(frame, frame);
+      cv::flip(frame, frame, 0);
+#endif
       if (imwrite(frame_name + ".1.jpg", frame))
         std::cout << "Frame " << frame_cnt << ".1 (" << frame_name << ") dumped successfully" << std::endl;
       else {
@@ -59,6 +67,10 @@ int main(int argc, char** argv)
       }
 
       vcap >> frame;
+#if @ROTATE_90_COUNTER@
+      cv::transpose(frame, frame);
+      cv::flip(frame, frame, 0);
+#endif
       if (imwrite(frame_name + ".2.jpg", frame))
         std::cout << "Frame " << frame_cnt << ".2 (" << frame_name << ") dumped successfully" << std::endl;
       else {
