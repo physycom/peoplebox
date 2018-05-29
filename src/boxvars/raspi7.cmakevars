@@ -1,5 +1,0 @@
-set(PEOPLEBOX_ID         "SANMARCO")
-set(CAMERA_IP            "192.168.5.207")
-set(CAMERA_CREDENTIALS   "physycom:ohnounapassWORD55")
-set(ENABLE_TRIPLET       0)
-set(ROTATE_90_COUNTER    0)
