@@ -28,6 +28,7 @@ install:
   #remove numpy from xcode7.3 image since it's broken if used by opencv
   - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then /usr/bin/yes | pip uninstall numpy                                                        ;fi
   - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew install opencv                                                                       ;fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew install opencv@2                                                                     ;fi
 
 script:
   - mkdir build && cd build && cmake ..
