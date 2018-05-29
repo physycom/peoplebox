@@ -2,3 +2,6 @@
 	path = darknet
 	url = https://github.com/cenit/darknet
 	branch = dev/cenit/yolov3
+[submodule "src/boxvars"]
+	path = src/boxvars
+	url = https://github.com/physycom/peoplebox-vars.git
