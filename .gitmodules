@@ -2,6 +2,9 @@
 	path = darknet
 	url = https://github.com/cenit/darknet
 	branch = dev/cenit/yolov3
-[submodule "src/jsoncons"]
-	path = src/jsoncons
+[submodule "src/boxvars"]
+	path = src/boxvars
+	url = https://github.com/physycom/peoplebox-vars.git
+[submodule "jsoncons"]
+	path = jsoncons
 	url = https://github.com/danielaparker/jsoncons
