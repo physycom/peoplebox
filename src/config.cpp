@@ -29,7 +29,16 @@ config parse_config_file(const char *filename)
   {
     while( cfgfile >> key >> equal >> value )
     {
-      if( key == "BARRIER_TOP" )
+      if ( equal != "=" )
+      {
+        std::cerr << "Malformed config file at line : " << key << " " << equal << " " << value << std::endl;
+        exit(ERR_MALFORMED_CONFIG);
+      }
+      else if( key[0] == '#' )
+      {
+        continue;
+      }
+      else if( key == "BARRIER_TOP" )
       {
         cfg.BARRIER_TOP = std::stoi(value);
       }
@@ -172,39 +181,38 @@ config parse_config_file(const char *filename)
 void print_config(const config cfg)
 {
   std::cout << "**** CONFIG ****" << std::endl;
-  std::cout << "BARRIER_TOP             : " << cfg.BARRIER_TOP << std::endl;
-  std::cout << "BARRIER_BOTTOM          : " << cfg.BARRIER_BOTTOM << std::endl;
-  std::cout << "BARRIER_LEFT            : " << cfg.BARRIER_LEFT << std::endl;
-  std::cout << "BARRIER_RIGHT           : " << cfg.BARRIER_RIGHT << std::endl;
-  std::cout << "TOLL                    : " << cfg.TOLL << std::endl;
-  std::cout << "DIST_THRESH             : " << cfg.DIST_THRESH << std::endl;
-  std::cout << "SCALE_X                 : " << cfg.SCALE_X << std::endl;
-  std::cout << "SCALE_Y                 : " << cfg.SCALE_Y << std::endl;
-  std::cout << "DIRECTION               : " << cfg.DIRECTION << std::endl;
-  std::cout << "PEOPLEBOX_ID            : " << cfg.PEOPLEBOX_ID << std::endl;
-  std::cout << "CAMERA_IP               : " << cfg.CAMERA_IP << std::endl;
-  std::cout << "CAMERA_CREDENTIALS      : " << cfg.CAMERA_CREDENTIALS << std::endl;
-  std::cout << "DETECTION_TYPE_TRACK    : " << cfg.DETECTION_TYPE_TRACK << std::endl;
-  std::cout << "BARRIER_IN              : " <<
+  std::cout << "BARRIER_TOP             = " << cfg.BARRIER_TOP << std::endl;
+  std::cout << "BARRIER_BOTTOM          = " << cfg.BARRIER_BOTTOM << std::endl;
+  std::cout << "BARRIER_LEFT            = " << cfg.BARRIER_LEFT << std::endl;
+  std::cout << "BARRIER_RIGHT           = " << cfg.BARRIER_RIGHT << std::endl;
+  std::cout << "TOLL                    = " << cfg.TOLL << std::endl;
+  std::cout << "DIST_THRESH             = " << cfg.DIST_THRESH << std::endl;
+  std::cout << "SCALE_X                 = " << cfg.SCALE_X << std::endl;
+  std::cout << "SCALE_Y                 = " << cfg.SCALE_Y << std::endl;
+  std::cout << "DIRECTION               = " << cfg.DIRECTION << std::endl;
+  std::cout << "PEOPLEBOX_ID            = " << cfg.PEOPLEBOX_ID << std::endl;
+  std::cout << "CAMERA_IP               = " << cfg.CAMERA_IP << std::endl;
+  std::cout << "CAMERA_CREDENTIALS      = " << cfg.CAMERA_CREDENTIALS << std::endl;
+  std::cout << "DETECTION_TYPE_TRACK    = " << cfg.DETECTION_TYPE_TRACK << std::endl;
+  std::cout << "BARRIER_IN              = " <<
   std::find_if(direction_map.begin(), direction_map.end(), [&cfg](const std::pair<std::string,int> &p){
     return cfg.BARRIER_IN == p.second;
   })->first
   << std::endl;
-  std::cout << "BARRIER_OUT             : " <<
+  std::cout << "BARRIER_OUT             = " <<
   std::find_if(direction_map.begin(), direction_map.end(), [&cfg](const std::pair<std::string,int> &p){
     return cfg.BARRIER_OUT == p.second;
   })->first
   << std::endl;
-  std::cout << "DIRECTION               : " << cfg.DIRECTION << std::endl;
-  std::cout << "C0                      : " << cfg.C0 << std::endl;
-  std::cout << "C1                      : " << cfg.C1 << std::endl;
-  std::cout << "C2                      : " << cfg.C2 << std::endl;
-  std::cout << "C3                      : " << cfg.C3 << std::endl;
-  std::cout << "C4                      : " << cfg.C4 << std::endl;
-  std::cout << "C5                      : " << cfg.C5 << std::endl;
-  std::cout << "MAX_FRAME_INFO_TO_STORE : " << cfg.MAX_FRAME_INFO_TO_STORE << std::endl;
-  std::cout << "FRAME_NUMBER_TRACKING   : " << cfg.FRAME_NUMBER_TRACKING << std::endl;
-  std::cout << "CAM_FPS                 : " << cfg.CAM_FPS << std::endl;
-  std::cout << "JSON_FOLDER             : " << cfg.JSON_FOLDER << std::endl;
-  std::cout << "IMAGE_FOLDER            : " << cfg.IMAGE_FOLDER << std::endl;
+  std::cout << "DIRECTION               = " << cfg.DIRECTION << std::endl;
+  std::cout << "C0                      = " << cfg.C0 << std::endl;
+  std::cout << "C1                      = " << cfg.C1 << std::endl;
+  std::cout << "C2                      = " << cfg.C2 << std::endl;
+  std::cout << "C3                      = " << cfg.C3 << std::endl;
+  std::cout << "C4                      = " << cfg.C4 << std::endl;
+  std::cout << "C5                      = " << cfg.C5 << std::endl;
+  std::cout << "MAX_FRAME_INFO_TO_STORE = " << cfg.MAX_FRAME_INFO_TO_STORE << std::endl;
+  std::cout << "CAM_FPS                 = " << cfg.CAM_FPS << std::endl;
+  std::cout << "JSON_FOLDER             = " << cfg.JSON_FOLDER << std::endl;
+  std::cout << "IMAGE_FOLDER            = " << cfg.IMAGE_FOLDER << std::endl;
 }

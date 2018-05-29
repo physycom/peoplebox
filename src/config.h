@@ -4,7 +4,7 @@
 #define MAX_LEN                100
 
 typedef struct config{
-  // tracking
+  //// tracking
   int BARRIER_TOP;
   int BARRIER_BOTTOM;
   int BARRIER_LEFT;
@@ -31,11 +31,10 @@ typedef struct config{
   float C5;
   // json
   int MAX_FRAME_INFO_TO_STORE;
-  int FRAME_NUMBER_TRACKING;
   char JSON_FOLDER[MAX_LEN];
   int SAMPLING_DT_SEC;
   int CAM_FPS;
-  // save_frame
+  //// save_frame
   char IMAGE_FOLDER[MAX_LEN];
 } config;
 
