@@ -1,10 +1,8 @@
 #include "opencv2/opencv.hpp"
-#include <chrono>
 #include <ctime>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include <thread>
 
 #define ERROR_CLI               111
 #define ERROR_VIDEO_STREAM      222
