@@ -3,14 +3,17 @@ import json
 import datetime
 from collections import OrderedDict
 import glob
+import numpy as np
 
 times = []
 dates = []
 flux = {}
 
-files = sorted(glob.glob('ORESI*'))
+#files = sorted(glob.glob('PAPADOPOLI_15277399*'))
+#files = sorted(glob.glob('PAPA*'))
+files = sorted(glob.glob('ORESI/ORESI*'))
 for file in files:
-  print(file)
+  #print(file)
 
   with open(file) as f:
     data = json.load(f, object_pairs_hook=OrderedDict)
@@ -24,11 +27,19 @@ for file in files:
     flux[data[key]["people_count"][0]["id"]].append(data[key]["people_count"][0]["count"])
     flux[data[key]["people_count"][1]["id"]].append(data[key]["people_count"][1]["count"])
 
-fig, ax = plt.subplots(1,1)
-[ax.plot(times, count, '-o', label=label) for label, count in flux.items()]
-subsample=5
+cumulate = {}
+for loc in flux:
+  #print(loc)
+  cumulate[loc] = np.cumsum(flux[loc])
+
+fig, (ax, ax1) = plt.subplots(1,2)
+subsample=100
+[ax.plot(times[::subsample], count[::subsample], '-o', label=label) for label, count in flux.items()]
+[ax1.plot(times[::subsample], cumul[::subsample], '-o', label=label) for label, cumul in cumulate.items()]
 ax.set_xticks(times[0::subsample])
 ax.set_xticklabels(dates[0::subsample], rotation=90, fontsize=10)
+ax1.set_xticks(times[0::subsample])
+ax1.set_xticklabels(dates[0::subsample], rotation=90, fontsize=10)
 plt.legend()
 plt.savefig("report.png")
 plt.show()

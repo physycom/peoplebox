@@ -11,44 +11,44 @@ import numpy as np
 import os
 
 def sample(probs):
-    s = sum(probs)
-    probs = [a/s for a in probs]
-    r = np.random.uniform(0, 1)
-    for i in range(len(probs)):
-        r = r - probs[i]
-        if r <= 0:
-            return i
-    return len(probs)-1
+  s = sum(probs)
+  probs = [a/s for a in probs]
+  r = np.random.uniform(0, 1)
+  for i in range(len(probs)):
+    r = r - probs[i]
+    if r <= 0:
+      return i
+  return len(probs)-1
 
 def c_array(ctype, values):
-    arr = (ct.ctype*len(values))()
-    arr[:] = values
-    return arr
+  arr = (ct.ctype*len(values))()
+  arr[:] = values
+  return arr
 
 class BOX(ct.Structure):
-    _fields_ = [("x", ct.c_float),
-                ("y", ct.c_float),
-                ("w", ct.c_float),
-                ("h", ct.c_float)]
+  _fields_ = [("x", ct.c_float),
+        ("y", ct.c_float),
+        ("w", ct.c_float),
+        ("h", ct.c_float)]
 
 class DETECTION(ct.Structure):
-    _fields_ = [("bbox", BOX),
-                ("classes", ct.c_int),
-                ("prob", ct.POINTER(ct.c_float)),
-                ("mask", ct.POINTER(ct.c_float)),
-                ("objectness", ct.c_float),
-                ("sort_class", ct.c_int)]
+  _fields_ = [("bbox", BOX),
+        ("classes", ct.c_int),
+        ("prob", ct.POINTER(ct.c_float)),
+        ("mask", ct.POINTER(ct.c_float)),
+        ("objectness", ct.c_float),
+        ("sort_class", ct.c_int)]
 
 
 class IMAGE(ct.Structure):
-    _fields_ = [("w", ct.c_int),
-                ("h", ct.c_int),
-                ("c", ct.c_int),
-                ("data", ct.POINTER(ct.c_float))]
+  _fields_ = [("w", ct.c_int),
+        ("h", ct.c_int),
+        ("c", ct.c_int),
+        ("data", ct.POINTER(ct.c_float))]
 
 class METADATA(ct.Structure):
-    _fields_ = [("classes", ct.c_int),
-                ("names", ct.POINTER(ct.c_char_p))]
+  _fields_ = [("classes", ct.c_int),
+        ("names", ct.POINTER(ct.c_char_p))]
 
 
 
@@ -122,52 +122,52 @@ predict_image.argtypes = [ct.c_void_p, IMAGE]
 predict_image.restype = ct.POINTER(ct.c_float)
 
 def classify(net, meta, im):
-    out = predict_image(net, im)
-    res = [(meta.names[i], out[i]) for i in range(meta.classes)]
-    res = sorted(res, key=lambda x: -x[1])
-    return res
+  out = predict_image(net, im)
+  res = [(meta.names[i], out[i]) for i in range(meta.classes)]
+  res = sorted(res, key=lambda x: -x[1])
+  return res
 
 
 def detect(net, meta, image, thresh=.5, hier_thresh=.5, nms=.45):
-    im = load_image(image, 0, 0)
-    num = ct.c_int(0)
-    pnum = ct.pointer(num)
-    predict_image(net, im)
-    dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, None, 0, pnum)
-    num = pnum[0]
-    if (nms): do_nms_obj(dets, num, meta.classes, nms);
+  im = load_image(image, 0, 0)
+  num = ct.c_int(0)
+  pnum = ct.pointer(num)
+  predict_image(net, im)
+  dets = get_network_boxes(net, im.w, im.h, thresh, hier_thresh, None, 0, pnum)
+  num = pnum[0]
+  if (nms): do_nms_obj(dets, num, meta.classes, nms);
 
-    #res = []
-    coords = []
-    for j in range(num):
-        for i in range(meta.classes):
-            if dets[j].prob[i] > 0:
-                b = dets[j].bbox
-                coords.append((b.x, b.y))
-                #res.append((meta.names[i], dets[j].prob[i], (b.x, b.y, b.w, b.h)))
-    #res = sorted(res, key=lambda x: -x[1])
-    free_image(im)
-    free_detections(dets, num)
-    return coords
+  #res = []
+  coords = []
+  for j in range(num):
+    for i in range(meta.classes):
+      if dets[j].prob[i] > 0:
+        b = dets[j].bbox
+        coords.append((b.x, b.y))
+        #res.append((meta.names[i], dets[j].prob[i], (b.x, b.y, b.w, b.h)))
+  #res = sorted(res, key=lambda x: -x[1])
+  free_image(im)
+  free_detections(dets, num)
+  return coords
 
 
 import json
 import time
 if __name__ == "__main__":
-    net = load_net(b'darknet/cfg/yolov3.cfg', b"darknet/yolov3.weights", ct.c_int(0))
-    meta = load_meta(b"darknet/cfg/coco.data")
+  net = load_net(b'darknet/cfg/yolov3.cfg', b"darknet/yolov3.weights", ct.c_int(0))
+  meta = load_meta(b"darknet/cfg/coco.data")
 
-    local = os.path.abspath(".")
-    images_dir = "frames"
-    files = (f
-             for f in os.listdir( os.path.join(local, images_dir))
-             if os.path.isfile(os.path.join(local, images_dir, f))
-             )
-    coords = {}
-    for f in files:
-        print("Process %s"%f)
-        st = time.time()
-        coords[f] = detect(net, meta, str.encode(os.path.join(local, images_dir, f)))
-        print("Elapsed time %.3f sec"%(time.time() - st))
+  local = os.path.abspath(".")
+  images_dir = "frames"
+  files = (f
+       for f in os.listdir( os.path.join(local, images_dir))
+       if os.path.isfile(os.path.join(local, images_dir, f))
+       )
+  coords = {}
+  for f in files:
+    print("Process %s"%f)
+    st = time.time()
+    coords[f] = detect(net, meta, str.encode(os.path.join(local, images_dir, f)))
+    print("Elapsed time %.3f sec"%(time.time() - st))
 #    coords = {f : detect(net, meta, str.encode(os.path.join(local, images_dir, f))) for f in files}
-    with open(images_dir + '.json', 'w') as fp: json.dump(coords, fp)
+  with open(images_dir + '.json', 'w') as fp: json.dump(coords, fp)
