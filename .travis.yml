@@ -1,7 +1,7 @@
 language: cpp
 
 #force old image, in the newer ones pip is not available but numpy is still incompatible (and also impossible to remove without pip)
-osx_image: xcode7.3
+osx_image: xcode9.1
 
 os:
   - linux
