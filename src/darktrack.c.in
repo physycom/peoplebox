@@ -3,6 +3,8 @@
 #include <string.h>
 #include <time.h>
 
+#include <common.h>
+
 #include "image.h"
 
 static char** demo_names;
@@ -51,14 +53,6 @@ double demo_time;
 #define SCALE_X                 @SCALE_X@                 // metric scale factor in x
 #define SCALE_Y                 @SCALE_Y@                 // metric scale factor in y
 #define DIRECTION               "@DIRECTION@"             // set barrier orientation
-
-#ifdef VERBOSE
-#define MESSAGE(...)     fprintf(stdout, __VA_ARGS__)
-#define MESSAGE_ERR(...) fprintf(stderr, __VA_ARGS__)
-#else
-#define MESSAGE(...)
-#define MESSAGE_ERR(...)
-#endif
 
 // tracking
 static float old_coords[MAX_NUM_PERSON][2]; // swap variable for yolo
@@ -347,6 +341,7 @@ void* detect_in_thread(void* ptr)
       fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", "@PEOPLEBOX_ID@");
       fprintf(info_json, "\t\t\"detection\" : \"%s\",\n", "@DETECTION_TYPE_TRACK@");
       fprintf(info_json, "\t\t\"sw_ver\" : %d,\n", SW_VER_TRACK);
+      fprintf(info_json, "\t\t\"people_presence\" : %d,\n", person_num);
       fprintf(info_json, "\t\t\"people_count\" : [{\"id\" : \"%s\", \"count\" : %d}, {\"id\" : \"%s\", \"count\" : %d}],\n", "@PEOPLEBOX_ID@-IN", (int)(fit(infos[i].cnt_in)+.5), "@PEOPLEBOX_ID@-OUT", (int)(fit(infos[i].cnt_out)+.5) );
       fprintf(info_json, "\t\t\"people_flux\" : [{\"id\" : \"%s\", \"flux\" : %d}, {\"id\" : \"%s\", \"flux\" : %d}],\n", "@PEOPLEBOX_ID@-IN", infos[i].flux_in, "@PEOPLEBOX_ID@-OUT", infos[i].flux_out);
       fprintf(info_json, "\t\t\"diagnostics\" : [{\"id\" : \"coming\", \"value\" : \"soon\"}]\n");

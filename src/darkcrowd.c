@@ -92,7 +92,7 @@ int min_of_three(int i, int j, int k)
   return result;
 }
 
-#define C0 3
+#define C0 1
 int fit(const unsigned int x)
 {
   return C0 * x;
