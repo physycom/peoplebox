@@ -48,7 +48,7 @@ if(MSVC)
 endif()
 
 set(JSONCONS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/jsoncons/include)
-include_directories(${JSONCONS_INCLUDE_DIR})
+include_directories(${JSONCONS_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/src)
 
 # crowd-counting
 add_executable(json_triplet_packer ${CMAKE_SOURCE_DIR}/src/json_triplet_packer.cpp)
