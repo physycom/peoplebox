@@ -16,7 +16,7 @@
 #define SAMPLING_DT_SEC                 300
 #define FRAME_SAMPLING_RATE             (CAM_FPS * SAMPLING_DT_SEC)
 
-#define SW_VER                          120
+#define SW_VER                          121
 
 int main(int argc, char** argv)
 {
@@ -40,8 +40,9 @@ int main(int argc, char** argv)
   std::string frame_name;
   int frame_cnt = 0;
   for (;;) {
+    auto timenow = std::time(0);
 #ifdef ENABLE_TIMESTAMP_BASED_SAMPLING
-    if (std::time(0) % SAMPLING_DT_SEC == 0) {
+    if (timenow % SAMPLING_DT_SEC == 0) {
 #else
     if (frame_cnt % FRAME_SAMPLING_RATE == 0) {
 #endif
@@ -50,7 +51,7 @@ int main(int argc, char** argv)
       cv::transpose(frame, frame);
       cv::flip(frame, frame, 0);
 #endif
-      frame_name = std::string(IMAGE_FOLDER) + "/@PEOPLEBOX_ID@_" + std::to_string(std::time(0));
+      frame_name = std::string(IMAGE_FOLDER) + "/@PEOPLEBOX_ID@_" + std::to_string(timenow);
       if (imwrite(frame_name + ".jpg", frame))
         MESSAGE("Frame %d (%s) dumped successfully\n", frame_cnt, frame_name.c_str());
       else {
@@ -87,6 +88,7 @@ int main(int argc, char** argv)
       vcap.grab();
     }
     ++frame_cnt;
+    if( frame_cnt > 10000 ) frame_cnt = 0;
   }
   vcap.release();
 
