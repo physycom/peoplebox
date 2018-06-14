@@ -41,7 +41,7 @@ int main(int argc, char** argv)
   int frame_cnt = 0;
   for (;;) {
     auto timenow = std::time(0);
-#ifdef ENABLE_TIMESTAMP_BASED_SAMPLING
+#if ENABLE_TIMESTAMP_BASED_SAMPLING
     if (timenow % SAMPLING_DT_SEC == 0) {
 #else
     if (frame_cnt % FRAME_SAMPLING_RATE == 0) {
