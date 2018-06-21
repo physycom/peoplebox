@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <map>
+#include <algorithm>
+
 #include <config.h>
 
 std::map<std::string, int> direction_map =
