@@ -51,12 +51,13 @@ set(JSONCONS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/jsoncons/include)
 include_directories(${JSONCONS_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/src)
 
 file(GLOB jetson_settings ${CMAKE_SOURCE_DIR}/src/boxvars/jetson*.cmakevars)
+file(GLOB raspi_settings ${CMAKE_SOURCE_DIR}/src/boxvars/raspi*.cmakevars)
 
 # crowdcounting
 add_executable(json_triplet_packer ${CMAKE_SOURCE_DIR}/src/json_triplet_packer.cpp)
 install(TARGETS json_triplet_packer DESTINATION ${CMAKE_SOURCE_DIR})
 add_custom_target(crowdcounting)
-foreach(jset IN LISTS jetson_settings)
+foreach(jset IN LISTS raspi_settings)
   include(${jset})
   get_filename_component(tag ${jset} NAME_WE)
   configure_file(${CMAKE_SOURCE_DIR}/src/darkcrowd.c.in ${CMAKE_SOURCE_DIR}/src/auto/darkcrowd_${tag}.c)
