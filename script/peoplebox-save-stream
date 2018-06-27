@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [[ $1 == "" ]]
+then
+  echo "Usage : $(basename $0) path/to/video"
+  exit 1
+fi
+
+dtsec=10 # 3600
+while true
+do
+  tnow=$(date +'%s')
+  check=$(($tnow % $dtsec))
+  if (( $check == 0 ))
+  then
+    echo ../dump_stream $1 10 &> save_stream.log
+    sleep 1
+  fi
+done
