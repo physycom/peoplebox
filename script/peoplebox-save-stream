@@ -1,4 +1,6 @@
 #!/bin/bash
+# Launch from home with
+# app save_stream located in 'Downloads' folder
 
 if [[ $1 == "" ]]
 then
@@ -6,7 +8,9 @@ then
   exit 1
 fi
 
-dtsec=10 # 3600
+cd Downloads
+
+dtsec=$((45 * 60))
 hmin=6
 hmax=23
 while true
@@ -21,9 +25,11 @@ do
   # every dtsec
   tnow=$(date +'%s')
   check=$(($tnow % $dtsec))
+  {
   if (( $check == 0 ))
   then
-    echo ../dump_stream $1 10 &> save_stream.log
-    sleep 1 # remove in production
+    echo "$(/bin/date) : Dumping stream"
+    echo save_stream $1 300
   fi
+  } &>> save_stream.log
 done
