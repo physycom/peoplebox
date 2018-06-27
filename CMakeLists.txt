@@ -59,6 +59,11 @@ if(OpenCV_FOUND)
   target_link_libraries(save_frame config ${linked_libs})
   install(TARGETS save_frame DESTINATION ${CMAKE_SOURCE_DIR})
 
+  add_executable(save_stream ${CMAKE_SOURCE_DIR}/src/save_stream.cpp)
+  target_link_libraries(save_stream ${OpenCV_LIBRARIES})
+  install(TARGETS save_stream DESTINATION ${CMAKE_SOURCE_DIR})
+  add_dependencies(tools save_stream)
+
   add_executable(dump_stream ${CMAKE_SOURCE_DIR}/src/dump_stream.cpp)
   target_link_libraries(dump_stream ${OpenCV_LIBRARIES})
   install(TARGETS dump_stream DESTINATION ${CMAKE_SOURCE_DIR})
