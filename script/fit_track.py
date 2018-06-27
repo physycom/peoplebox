@@ -90,7 +90,7 @@ if __name__ == "__main__":
   gt['jet'], gt['frames'] = gt['VIDEO'].str.split('_', 1).str
   ground_truth = { jet : [list(data.IN), list(data.OUT)] for jet, data in gt.groupby(gt.jet)}
 
-  inout = pd.read_csv(jetson_file, sep=" ", header=None)
+  inout = pd.read_csv(jetson_file, sep=";", header=None)
   inout_track = [list(inout[0]), list(inout[1])]
   jetson = jetson_file.split("_")[0]
 
