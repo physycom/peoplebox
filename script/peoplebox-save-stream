@@ -7,13 +7,23 @@ then
 fi
 
 dtsec=10 # 3600
+hmin=6
+hmax=23
 while true
 do
+  # skip nightly hours
+  hnow=$(date +'%H')
+  if (( $hnow < $hmin )) || (( $hnow > $hmax ))
+  then
+    continue
+  fi
+
+  # every dtsec
   tnow=$(date +'%s')
   check=$(($tnow % $dtsec))
   if (( $check == 0 ))
   then
     echo ../dump_stream $1 10 &> save_stream.log
-    sleep 1
+    sleep 1 # remove in production
   fi
 done
