@@ -13,7 +13,7 @@ while true
 do
   # skip nightly hours
   hnow=$(date +'%H')
-  if (( $hnow < $hmin )) || (( $hnow > $hmax ))
+  if (( $hnow < $hmin )) || (( $hnow >= $hmax ))
   then
     continue
   fi
