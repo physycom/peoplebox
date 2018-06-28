@@ -32,4 +32,6 @@ do
     ./save_stream $1 300
   fi
   } &>> save_stream.log
+
+  sleep 0.5
 done
