@@ -4,6 +4,14 @@
 #define CAM_FPS           3
 #define DEFAULT_VIDEOLEN  10
 
+std::string time_now_hr() {
+  time_t tnow = std::time(nullptr);
+  struct tm tstruct = *localtime(&tnow);
+  char buf[100];
+  strftime(buf, sizeof(buf), "%Y%m%d-%H%M%S", &tstruct);
+  return buf;
+}
+
 int main(int argc, char** argv)
 {
   std::string videoin;
@@ -45,8 +53,9 @@ int main(int argc, char** argv)
   }
   int frame_width = vcap.get(CV_CAP_PROP_FRAME_WIDTH);
   int frame_height = vcap.get(CV_CAP_PROP_FRAME_HEIGHT);
-  std::string videoname = "dump_" + std::to_string(std::time(0)) + ".mp4";
-  cv::VideoWriter video(videoname, CV_FOURCC('X', '2', '6', '4'), 10, cv::Size(frame_width, frame_height), true);
+  std::string videoname = "video_" + time_now_hr() + ".mp4";
+
+  cv::VideoWriter video(videoname, CV_FOURCC('X', '2', '6', '4'), cam_fps, cv::Size(frame_width, frame_height), true);
 
   int maxframe = videolen_sec * cam_fps;
   for (int i = 0; i < maxframe; ++i) {
