@@ -29,7 +29,9 @@ do
   if (( $check == 0 ))
   then
     echo "$(/bin/date) : Dumping stream"
-    echo save_stream $1 300
+    ./save_stream $1 300
   fi
   } &>> save_stream.log
+
+  sleep 0.5
 done

@@ -1,5 +1,6 @@
 #include "opencv2/opencv.hpp"
 #include <iostream>
+#include <chrono>
 
 #define CAM_FPS           3
 #define DEFAULT_VIDEOLEN  10
