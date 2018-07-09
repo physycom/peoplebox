@@ -22,6 +22,9 @@ libdarknet.so
 libdarknet_lib.dylib
 darknet.lib
 darknet.dll
+darktrack
+save_frame
+save_stream
 .fuse*
 
 # OS Generated #
@@ -32,6 +35,7 @@ Thumbs.db
 *.swp
 
 log.txt
+*.log
 
 build/
 build_debug/

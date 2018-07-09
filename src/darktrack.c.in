@@ -406,7 +406,7 @@ int main()
 
   avg = (float*)calloc(demo_total, sizeof(float));
 
-  printf("video stream: %s\n", filename);
+  MESSAGE("video stream: %s\n", filename);
   cap = cvCaptureFromFile(filename);
 
   if (!cap) {

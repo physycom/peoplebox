@@ -50,17 +50,25 @@ endif()
 set(JSONCONS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/jsoncons/include)
 include_directories(${JSONCONS_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/src)
 
-# crowd-counting
+file(GLOB jetson_settings ${CMAKE_SOURCE_DIR}/src/boxvars/jetson*.cmakevars)
+file(GLOB raspi_settings ${CMAKE_SOURCE_DIR}/src/boxvars/raspi*.cmakevars)
+
+# crowdcounting
 add_executable(json_triplet_packer ${CMAKE_SOURCE_DIR}/src/json_triplet_packer.cpp)
 install(TARGETS json_triplet_packer DESTINATION ${CMAKE_SOURCE_DIR})
-
-add_executable(darkcrowd ${CMAKE_SOURCE_DIR}/src/darkcrowd.c)
-target_link_libraries(darkcrowd darknet_lib ${CMAKE_THREAD_LIBS_INIT} ${linked_libs})
-install(TARGETS darkcrowd DESTINATION ${CMAKE_SOURCE_DIR})
+add_custom_target(crowdcounting)
+foreach(jset IN LISTS raspi_settings)
+  include(${jset})
+  get_filename_component(tag ${jset} NAME_WE)
+  configure_file(${CMAKE_SOURCE_DIR}/src/darkcrowd.c.in ${CMAKE_SOURCE_DIR}/src/auto/darkcrowd_${tag}.c)
+  add_executable(darkcrowd_${tag} ${CMAKE_SOURCE_DIR}/src/auto/darkcrowd_${tag}.c)
+  target_link_libraries(darkcrowd_${tag} darknet_lib ${linked_libs} ${CMAKE_THREAD_LIBS_INIT})
+  install(TARGETS darkcrowd_${tag} DESTINATION ${CMAKE_SOURCE_DIR})
+  add_dependencies(crowdcounting darkcrowd_${tag})
+endforeach()
 
 # tracking
 add_custom_target(tracking)
-file(GLOB jetson_settings ${CMAKE_SOURCE_DIR}/src/boxvars/jetson*.cmakevars)
 foreach(jset IN LISTS jetson_settings)
   include(${jset})
   get_filename_component(tag ${jset} NAME_WE)
@@ -89,6 +97,11 @@ if(OpenCV_FOUND)
   target_link_libraries(dump_stream ${OpenCV_LIBRARIES})
   install(TARGETS dump_stream DESTINATION ${CMAKE_SOURCE_DIR})
   add_dependencies(tools dump_stream)
+
+  add_executable(save_stream ${CMAKE_SOURCE_DIR}/src/save_stream.cpp)
+  target_link_libraries(save_stream ${OpenCV_LIBRARIES})
+  install(TARGETS save_stream DESTINATION ${CMAKE_SOURCE_DIR})
+  add_dependencies(tools save_stream)
 
   add_executable(dump_frame ${CMAKE_SOURCE_DIR}/src/dump_frame.cpp)
   target_link_libraries(dump_frame ${OpenCV_LIBRARIES})

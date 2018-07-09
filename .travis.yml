@@ -1,15 +1,15 @@
 language: cpp
 
 #force old image, in the newer ones pip is not available but numpy is still incompatible (and also impossible to remove without pip)
-osx_image: xcode9.1
+#osx_image: xcode9.1
 
 os:
   - linux
-  - osx
+#  - osx
 
 compiler:
     - gcc
-    - clang
+#    - clang
 
 addons:
   apt:
@@ -20,15 +20,15 @@ matrix:
     exclude:
     - os: osx
       compiler: gcc
-    - os: linux
-      compiler: clang
+#    - os: linux
+#      compiler: clang
 
-install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew update                                                                               ;fi
+#install:
+#  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew update                                                                               ;fi
   #remove numpy from xcode7.3 image since it's broken if used by opencv
-  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then /usr/bin/yes | pip uninstall numpy                                                        ;fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew install opencv                                                                       ;fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew install opencv@2                                                                     ;fi
+#  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then /usr/bin/yes | pip uninstall numpy                                                        ;fi
+#  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew install opencv                                                                       ;fi
+#  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then brew install opencv@2                                                                     ;fi
 
 script:
   - mkdir build && cd build && cmake ..

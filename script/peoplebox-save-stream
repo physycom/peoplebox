@@ -1,0 +1,37 @@
+#!/bin/bash
+# Launch from home with
+# app save_stream located in 'Downloads' folder
+
+if [[ $1 == "" ]]
+then
+  echo "Usage : $(basename $0) path/to/video"
+  exit 1
+fi
+
+cd Downloads
+
+dtsec=$((45 * 60))
+hmin=6
+hmax=23
+while true
+do
+  # skip nightly hours
+  hnow=$(date +'%H')
+  if (( $hnow < $hmin )) || (( $hnow >= $hmax ))
+  then
+    continue
+  fi
+
+  # every dtsec
+  tnow=$(date +'%s')
+  check=$(($tnow % $dtsec))
+  {
+  if (( $check == 0 ))
+  then
+    echo "$(/bin/date) : Dumping stream"
+    ./save_stream $1 300
+  fi
+  } &>> save_stream.log
+
+  sleep 0.5
+done
