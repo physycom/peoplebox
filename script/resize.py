@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Apr  8 15:13:54 2018
-
-@author: NICO
-"""
+#!/usr/bin/env python3
 
 import os
 import cv2

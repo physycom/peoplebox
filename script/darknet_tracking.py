@@ -1,10 +1,6 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Apr  8 15:13:54 2018
+#!/usr/bin/env python3
 
-@author: NICO
-"""
-
+# before running, be sure to export LD_LIBRARY_PATH correctly:
 # export LD_LIBRARY_PATH=~/Desktop/C++Code/darknet:$LD_LIBRARY_PATH
 import ctypes as ct
 import numpy as np

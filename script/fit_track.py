@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue May 22 16:49:56 2018
-
-@author: nico
-"""
+#!/usr/bin/env python3
 
 import matplotlib.pylab as plt
 import pandas as pd

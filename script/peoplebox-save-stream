@@ -1,6 +1,7 @@
 #!/bin/bash
-# Launch from home with
-# app save_stream located in 'Downloads' folder
+
+# Launch from home, using a screen session, with
+# executable save_stream located in 'Downloads' folder
 
 if [[ $1 == "" ]]
 then
@@ -10,15 +11,21 @@ fi
 
 cd Downloads
 
-dtsec=$((45 * 60))
-hmin=6
-hmax=23
+#dtsec=$((45 * 60))
+#hmin=6
+#hmax=23
+#movielength=300
+dtsec=$((4 * 60 * 60))
+hmin=7
+hmax=21
+movielength=$((15 * 60))
 while true
 do
   # skip nightly hours
   hnow=$(date +'%H')
   if (( $hnow < $hmin )) || (( $hnow >= $hmax ))
   then
+    sleep 0.5
     continue
   fi
 
@@ -29,7 +36,7 @@ do
   if (( $check == 0 ))
   then
     echo "$(/bin/date) : Dumping stream"
-    ./save_stream $1 300
+    ./save_stream $1 $movielength
   fi
   } &>> save_stream.log
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import matplotlib.pylab as plt
 import pandas as pd
 import numpy as np
