@@ -364,7 +364,7 @@ int main()
   int i;
   char* cfg = "darknet/cfg/yolov3.cfg";
   char* weights = "darknet/yolov3.weights";
-  char* filename = "@CAMERA_PROTOCOL@@CAMERA_CREDENTIALS@@@CAMERA_IP@@CAMERA_FEED_ADDRESS@";
+  char* filename = "@CAMERA_PROTOCOL@@CAMERA_CREDENTIALS@@CAMERA_IP@@CAMERA_FEED_ADDRESS@";
   char* name_list = "darknet/data/coco.names";
 
   demo_thresh = .5;
