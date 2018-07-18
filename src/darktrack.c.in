@@ -364,8 +364,7 @@ int main()
   int i;
   char* cfg = "darknet/cfg/yolov3.cfg";
   char* weights = "darknet/yolov3.weights";
-  //char* filename = "rtsp://@CAMERA_CREDENTIALS@@@CAMERA_IP@:554/rtpstream/config1=u";
-  char* filename = "rtsp://@CAMERA_CREDENTIALS@@@CAMERA_IP@/axis-media/media.amp";
+  char* filename = "rtsp://@CAMERA_CREDENTIALS@@@CAMERA_IP@@CAMERA_FEED_ADDRESS@";
   char* name_list = "darknet/data/coco.names";
 
   demo_thresh = .5;
