@@ -15,7 +15,6 @@ flux = {}
 #files = sorted(glob.glob('PAPA*'))
 files = sorted(glob.glob('ORESI/ORESI*'))
 for file in files:
-  #print(file)
 
   with open(file) as f:
     data = json.load(f, object_pairs_hook=OrderedDict)
