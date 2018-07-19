@@ -12,9 +12,9 @@ dates = {}
 count = {}
 cumulate = {}
 
-path = 'X:/sinigard/Codice/peoplebox/script/data/w0.5/old_fit'
-#tags = ['0800', '1200', '1600', '2000']
-tags = ['0800']
+path = 'C:/Users/Alessandro/Desktop/data/newfit/'
+#path = 'X:/sinigard/Codice/peoplebox/script/data/w0.5/old_fit'
+tags = ['0800','1200','1600','2000']
 
 gt = {
       '0800' : {
@@ -86,28 +86,32 @@ for tag in tags:
           dates[tag] = []
         times[tag].append(data[key]["timestamp"])
         dates[tag].append(datetime.datetime.fromtimestamp(int(data[key]["timestamp"])).strftime('%H:%M:%S'))
-        count[tag][data[key]["people_count"][0]["id"]].append(t(data[key]["people_count"][0]["count"], prob_in))
-        count[tag][data[key]["people_count"][1]["id"]].append(t(data[key]["people_count"][1]["count"], prob_out))
-        #count[tag][data[key]["people_count"][0]["id"]].append(data[key]["people_count"][0]["count"])
-        #count[tag][data[key]["people_count"][1]["id"]].append(data[key]["people_count"][1]["count"])
+        if False:
+          count[tag][data[key]["people_count"][0]["id"]].append(t(data[key]["people_count"][0]["count"], prob_in))
+          count[tag][data[key]["people_count"][1]["id"]].append(t(data[key]["people_count"][1]["count"], prob_out))
+        else:
+          count[tag][data[key]["people_count"][0]["id"]].append(data[key]["people_count"][0]["count"])
+          count[tag][data[key]["people_count"][1]["id"]].append(data[key]["people_count"][1]["count"])
 
     for loc in count[tag]:
       cumulate[tag][loc] = np.cumsum(count[tag][loc])
 
-    a=[print("%5s : %-13s %5d %5d %5d%%" % (tag, loc, cumulate[tag][loc][-1], gt[tag][loc], int((cumulate[tag][loc][-1] - gt[tag][loc])/gt[tag][loc]*100))) for loc in cumulate[tag]]
+print("%5s : %-13s %5s %5s %4s%%" % ('time','location', 'track', 'gt', 'err'))
+for tag in tags:
+  a=[print("%5s : %-13s %5d %5d %4d%%" % (tag, loc, cumulate[tag][loc][-1], gt[tag][loc], int((cumulate[tag][loc][-1] - gt[tag][loc])/gt[tag][loc]*100))) for loc in cumulate[tag]]
 
 
 #%%
-
-tag='0800'
-fig, (ax, ax1) = plt.subplots(1,2)
-subsample=10
-[ax.plot(times[tag][::subsample], count[::subsample], '-o', label=label) for label, count in count[tag].items()]
-[ax1.plot(times[tag][::subsample], cumul[::subsample], '-o', label=label) for label, cumul in cumulate[tag].items()]
-ax.set_xticks(times[tag][0::subsample])
-ax.set_xticklabels(dates[tag][0::subsample], rotation=90, fontsize=10)
-ax1.set_xticks(times[tag][0::subsample])
-ax1.set_xticklabels(dates[tag][0::subsample], rotation=90, fontsize=10)
-plt.legend()
-plt.savefig("report.png")
-plt.show()
+if False:
+    tag=tags[0]
+    fig, (ax, ax1) = plt.subplots(1,2)
+    subsample=10
+    [ax.plot(times[tag][::subsample], count[::subsample], '-o', label=label) for label, count in count[tag].items()]
+    [ax1.plot(times[tag][::subsample], cumul[::subsample], '-o', label=label) for label, cumul in cumulate[tag].items()]
+    ax.set_xticks(times[tag][0::subsample])
+    ax.set_xticklabels(dates[tag][0::subsample], rotation=90, fontsize=10)
+    ax1.set_xticks(times[tag][0::subsample])
+    ax1.set_xticklabels(dates[tag][0::subsample], rotation=90, fontsize=10)
+    plt.legend()
+    plt.savefig("report.png")
+    plt.show()
