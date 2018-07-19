@@ -10,8 +10,12 @@ import numpy as np
 times = []
 dates = []
 count = {}
+count_norm = {}
+cumulate = {}
+cumulate_norm = {}
 
-files = sorted(glob.glob('/Users/sinigard/Desktop/movie_dump/json/PAPADOPOLI_*'))
+#files = sorted(glob.glob('/Users/sinigard/Desktop/movie_dump/json/PAPADOPOLI_*'))
+files = sorted(glob.glob('X:\\sinigard\\Codice\\peoplebox\\script\\data\\w0.2\\0800\\*'))
 
 # 20180716, from 1200 to 1215 (UTC: from 1000 to 1015)
 #timestamp_min=1531735200
@@ -22,8 +26,8 @@ files = sorted(glob.glob('/Users/sinigard/Desktop/movie_dump/json/PAPADOPOLI_*')
 #timestamp_max=1531750500
 
 # 20180716, from 2000 to 2015 (UTC: from 1800 to 1815)
-timestamp_min=1531764000
-timestamp_max=1531764900
+#timestamp_min=1531764000
+#timestamp_max=1531764900
 
 # 20180717, from 0800 to 0815 (UTC: from 0600 to 0615)
 #timestamp_min=1531807200
@@ -33,9 +37,10 @@ timestamp_max=1531764900
 #%%
 
 for file in files:
-  timestamp=int(file.split('/')[-1].split('.')[0].split('_')[-1])
-  if timestamp < timestamp_min or timestamp > timestamp_max: 
-      continue
+#  timestamp=int(file.split('/')[-1].split('.')[0].split('_')[-1])
+  timestamp=int(file.split('\\')[-1].split('.')[0].split('_')[-1])
+#  if timestamp < timestamp_min or timestamp > timestamp_max: 
+#      continue
 
   with open(file) as f:
     data = json.load(f, object_pairs_hook=OrderedDict)
@@ -49,11 +54,17 @@ for file in files:
     count[data[key]["people_count"][0]["id"]].append(data[key]["people_count"][0]["count"])
     count[data[key]["people_count"][1]["id"]].append(data[key]["people_count"][1]["count"])
 
-cumulate = {}
 for loc in count:
     cumulate[loc] = np.cumsum(count[loc])
 
+#%%
 
+    
+for loc in count:
+    count_norm[loc]=np.array(1.95*np.array(count[loc])-0.5, dtype=int)
+    cumulate_norm[loc] = np.cumsum(count_norm[loc])
+    
+    
 #%%
 
 fig, (ax, ax1) = plt.subplots(1,2)
