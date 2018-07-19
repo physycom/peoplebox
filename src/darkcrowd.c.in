@@ -13,8 +13,8 @@ static image buff[3];
 static image buff_letter[3];
 static int buff_index = 0;
 static CvCapture* cap;
-static float thresh = .1;
-static float hier_thresh = .1;
+static float thresh = @DARKNET_THRESHOLD@;
+static float hier_thresh = @DARKNET_THRESHOLD@;
 
 static int demo_frame = 3;
 static int demo_index = 0;

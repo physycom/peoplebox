@@ -16,8 +16,8 @@ static image buff_letter[3];
 static int buff_index = 0;
 static CvCapture* cap;
 static float fps = 0;
-static float demo_thresh = 0;
-static float demo_hier = .5;
+static float demo_thresh = @DARKNET_THRESHOLD@;
+static float demo_hier = @DARKNET_THRESHOLD@;
 
 static int demo_frame = 3;
 static int demo_index = 0;
@@ -367,8 +367,6 @@ int main()
   char* filename = "@CAMERA_PROTOCOL@@CAMERA_CREDENTIALS@@CAMERA_IP@@CAMERA_FEED_ADDRESS@";
   char* name_list = "darknet/data/coco.names";
 
-  demo_thresh = .5;
-  demo_hier = .5;
   demo_classes = 80;
 
   /* prepare frame info array */
