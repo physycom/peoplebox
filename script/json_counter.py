@@ -95,7 +95,6 @@ for tag in tags:
     a=[print("%5s : %-13s %5d %5d %5d%%" % (tag, loc, cumulate[tag][loc][-1], gt[tag][loc], int((cumulate[tag][loc][-1] - gt[tag][loc])/gt[tag][loc]*100))) for loc in cumulate[tag]]
     
 
-
 #%%
 
 tag='0800'
