@@ -12,9 +12,9 @@ dates = {}
 count = {}
 cumulate = {}
 
-#files = sorted(glob.glob('/Users/sinigard/Desktop/movie_dump/json/PAPADOPOLI_*'))
-path = 'X:/sinigard/Codice/peoplebox/script/data/w0.5'
-tags = ['0800', '1200', '1600', '2000']
+path = 'X:/sinigard/Codice/peoplebox/script/data/w0.5/old_fit'
+#tags = ['0800', '1200', '1600', '2000']
+tags = ['0800']
 
 gt = {
       '0800' : {
@@ -72,12 +72,12 @@ for tag in tags:
     for file in sorted(glob.glob(path + '/' + tag + '/*')):
       timestamp=int(file.split('/')[-1].split('.')[0].split('_')[-1])
     #  timestamp=int(file.split('\\')[-1].split('.')[0].split('_')[-1])
-    #  if timestamp < timestamp_min or timestamp > timestamp_max: 
+    #  if timestamp < timestamp_min or timestamp > timestamp_max:
     #      continue
-    
+
       with open(file) as f:
         data = json.load(f, object_pairs_hook=OrderedDict)
-    
+
       for key in data:
         if not count[tag]:
           count[tag][data[key]["people_count"][0]["id"]] = []
@@ -88,12 +88,14 @@ for tag in tags:
         dates[tag].append(datetime.datetime.fromtimestamp(int(data[key]["timestamp"])).strftime('%H:%M:%S'))
         count[tag][data[key]["people_count"][0]["id"]].append(t(data[key]["people_count"][0]["count"], prob_in))
         count[tag][data[key]["people_count"][1]["id"]].append(t(data[key]["people_count"][1]["count"], prob_out))
+        #count[tag][data[key]["people_count"][0]["id"]].append(data[key]["people_count"][0]["count"])
+        #count[tag][data[key]["people_count"][1]["id"]].append(data[key]["people_count"][1]["count"])
 
     for loc in count[tag]:
       cumulate[tag][loc] = np.cumsum(count[tag][loc])
-    
+
     a=[print("%5s : %-13s %5d %5d %5d%%" % (tag, loc, cumulate[tag][loc][-1], gt[tag][loc], int((cumulate[tag][loc][-1] - gt[tag][loc])/gt[tag][loc]*100))) for loc in cumulate[tag]]
-    
+
 
 #%%
 

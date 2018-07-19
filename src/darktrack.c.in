@@ -98,10 +98,11 @@ float fit(const int x)
 
 int t(const int n, const double prob)
 {
-  int nt = n, tmp;
-  for(int i=0; i<n; ++i)
+  int nt = n;
+  int i;
+  for(i=0; i<n; ++i)
   {
-    double tmp = rand()/RAND_MAX;
+    double tmp = ((double)rand())/RAND_MAX;
     if( tmp < (prob - ((int)prob)) )
       ++nt;
     nt += ((int)prob);
