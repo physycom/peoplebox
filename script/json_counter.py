@@ -15,7 +15,7 @@ cumulate = {}
 cumulate_norm = {}
 
 #files = sorted(glob.glob('/Users/sinigard/Desktop/movie_dump/json/PAPADOPOLI_*'))
-files = sorted(glob.glob('X:\\sinigard\\Codice\\peoplebox\\script\\data\\w0.2\\0800\\*'))
+files = sorted(glob.glob('C:/Users/Alessandro/Desktop/data/w0.5/1200/*'))
 
 # 20180716, from 1200 to 1215 (UTC: from 1000 to 1015)
 #timestamp_min=1531735200
@@ -59,16 +59,23 @@ for loc in count:
 
 #%%
 
-    
 for loc in count:
     count_norm[loc]=np.array(1.95*np.array(count[loc])-0.5, dtype=int)
     cumulate_norm[loc] = np.cumsum(count_norm[loc])
-    
-    
+
+#%%
+
+histo = {}
+bins=np.arange(0,10)
+for loc in count:
+    histo[loc] = np.histogram(count[loc], bins=bins)
+
+plt.hist([count[loc] for loc in count], bins=bins)
+
 #%%
 
 fig, (ax, ax1) = plt.subplots(1,2)
-subsample=100
+subsample=1
 [ax.plot(times[::subsample], count[::subsample], '-o', label=label) for label, count in count.items()]
 [ax1.plot(times[::subsample], cumul[::subsample], '-o', label=label) for label, cumul in cumulate.items()]
 ax.set_xticks(times[0::subsample])
