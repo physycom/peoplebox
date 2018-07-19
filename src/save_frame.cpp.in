@@ -24,7 +24,7 @@ int main(int argc, char** argv)
   if (argc > 1)
     input = argv[1];
   else
-    input = "rtsp://@CAMERA_CREDENTIALS@@@CAMERA_IP@@CAMERA_FEED_ADDRESS@";
+    input = "@CAMERA_PROTOCOL@@CAMERA_CREDENTIALS@@CAMERA_IP@@CAMERA_FEED_ADDRESS@";
 
   std::ofstream swver("save_frame.sw_ver");
   swver << std::time(0) << std::endl << SW_VER << std::endl;
