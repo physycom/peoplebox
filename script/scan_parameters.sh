@@ -94,6 +94,7 @@ DIRECTION="LEFT_RIGHT"
   cd "$WORKSPACE/peoplebox/data/"
   mkdir -p "$WORKSPACE/peoplebox/data/${tag}_${bleft}_${bright}"
   mv *.json "$WORKSPACE/peoplebox/data/${tag}_${bleft}_${bright}"
+  cp "$WORKSPACE/peoplebox/src/boxvars/${INPUTFILE}" "$WORKSPACE/peoplebox/data/${tag}_${bleft}_${bright}"
 
   done
   done
