@@ -67,13 +67,13 @@ DIRECTION="LEFT_RIGHT"
     echo "set(DETECTION_TYPE_TRACK \"${DETECTION_TYPE_TRACK}\")"
     echo "set(BARRIER_TOP          ${BARRIER_TOP})"
     echo "set(BARRIER_BOTTOM       ${BARRIER_BOTTOM})"
-    echo "set(BARRIER_LEFT         ${BARRIER_LEFT})"
-    echo "set(BARRIER_RIGHT        ${BARRIER_RIGHT})"
+    echo "set(BARRIER_LEFT         ${bleft})"
+    echo "set(BARRIER_RIGHT        ${bright})"
     echo "set(TOLL                 ${TOLL})"
     echo "set(SCALE_X              ${SCALE_X})"
     echo "set(SCALE_Y              ${SCALE_Y})"
-    echo "set(BARRIER_IN           \"${bleft}\")"
-    echo "set(BARRIER_OUT          \"${bright}\")"
+    echo "set(BARRIER_IN           \"${BARRIER_IN}\")"
+    echo "set(BARRIER_OUT          \"${BARRIER_OUT}\")"
     echo "set(PP                   ${PP})"
     echo "set(PM                   ${PM})"
     echo "set(DIRECTION            \"${DIRECTION}\")"
@@ -97,7 +97,7 @@ DIRECTION="LEFT_RIGHT"
 
   done
   done
-  done
+  #done
 
   echo DONE
 } &>> log.txt
