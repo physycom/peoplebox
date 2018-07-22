@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-INPUTFILE=jetsoncnaf.cmakevars
-
 declare -a tags
 tags=("20180716-1200" "20180716-1600" "20180716-2000" "20180717-0800" "20180719-1200" "20180720-0800")
 
@@ -36,55 +34,70 @@ DIRECTION="LEFT_RIGHT"
 ## do not touch from here :) ##
 ###############################
 
-
-for tag in ${tags[*]}
-do
-for bleft in ${BARRIER_LEFT[*]}
-do
-for bright in ${BARRIER_RIGHT[*]}
-do
-
-cd "$WORKSPACE/peoplebox/src/boxvars/"
-rm -f ${INPUTFILE}
-touch ${INPUTFILE}
-
 {
-  echo "set(PEOPLEBOX_ID         \"BETA_CNAF\")"
-  echo "set(CAMERA_PROTOCOL      \"/home/nvidia/Downloads/video_${tag}.mp4\")"
-  echo "set(CAMERA_IP            \"\")"
-  echo "set(CAMERA_CREDENTIALS   \"\")"
-  echo "set(CAMERA_FEED_ADDRESS  \"\")"
-  echo "set(DARKNET_THRESHOLD    ${DARKNET_THRESHOLD})"
-  echo "set(ENABLE_TRIPLET       ${ENABLE_TRIPLET})"
-  echo "set(ROTATE_90_COUNTER    ${ROTATE_90_COUNTER})"
-  echo "set(DETECTION_TYPE_TRACK \"${DETECTION_TYPE_TRACK}\")"
-  echo "set(BARRIER_TOP          ${BARRIER_TOP})"
-  echo "set(BARRIER_BOTTOM       ${BARRIER_BOTTOM})"
-  echo "set(BARRIER_LEFT         ${BARRIER_LEFT})"
-  echo "set(BARRIER_RIGHT        ${BARRIER_RIGHT})"
-  echo "set(TOLL                 ${TOLL})"
-  echo "set(SCALE_X              ${SCALE_X})"
-  echo "set(SCALE_Y              ${SCALE_Y})"
-  echo "set(BARRIER_IN           \"${BARRIER_IN}\")"
-  echo "set(BARRIER_OUT          \"${BARRIER_OUT}\")"
-  echo "set(PP                   ${PP})"
-  echo "set(PM                   ${PM})"
-  echo "set(DIRECTION            \"${DIRECTION}\")"
-  echo "set(C0                   ${C0})"
-  echo "set(C1                   ${C1})"
-  echo "set(C2                   ${C2})"
-  echo "set(C3                   ${C3})"
-  echo "set(C4                   ${C4})"
-  echo "set(C5                   ${C5})"
-  echo "set(PROB_IN              ${PROB_IN})"
-  echo "set(PROB_OUT             ${PROB_OUT})"
-} >> ${INPUTFILE}
+  cd "$WORKSPACE/peoplebox/"
+  git pull
+  git submodule update
 
-cd "$WORKSPACE/peoplebox/data/"
-mkdir -p "$WORKSPACE/peoplebox/data/${tag}_${bleft}_${bright}"
-mv *.json "$WORKSPACE/peoplebox/data/${tag}_${bleft}_${bright}"
+  for tag in ${tags[*]}
+  do
+  for bleft in ${BARRIER_LEFT[*]}
+  do
+  #for bright in ${BARRIER_RIGHT[*]}
+  #do
+  bright=${bleft}
 
-done
-done
-done
+  echo "Running with ${tag}_${bleft}_${bright}"
 
+  cd "$WORKSPACE/peoplebox/src/boxvars/"
+
+  INPUTFILE=jetsoncnaf.cmakevars
+  rm -f ${INPUTFILE}
+  touch ${INPUTFILE}
+
+  {
+    echo "set(PEOPLEBOX_ID         \"BETA_CNAF\")"
+    echo "set(CAMERA_PROTOCOL      \"/home/nvidia/Downloads/video_${tag}.mp4\")"
+    echo "set(CAMERA_IP            \"\")"
+    echo "set(CAMERA_CREDENTIALS   \"\")"
+    echo "set(CAMERA_FEED_ADDRESS  \"\")"
+    echo "set(DARKNET_THRESHOLD    ${DARKNET_THRESHOLD})"
+    echo "set(ENABLE_TRIPLET       ${ENABLE_TRIPLET})"
+    echo "set(ROTATE_90_COUNTER    ${ROTATE_90_COUNTER})"
+    echo "set(DETECTION_TYPE_TRACK \"${DETECTION_TYPE_TRACK}\")"
+    echo "set(BARRIER_TOP          ${BARRIER_TOP})"
+    echo "set(BARRIER_BOTTOM       ${BARRIER_BOTTOM})"
+    echo "set(BARRIER_LEFT         ${BARRIER_LEFT})"
+    echo "set(BARRIER_RIGHT        ${BARRIER_RIGHT})"
+    echo "set(TOLL                 ${TOLL})"
+    echo "set(SCALE_X              ${SCALE_X})"
+    echo "set(SCALE_Y              ${SCALE_Y})"
+    echo "set(BARRIER_IN           \"${bleft}\")"
+    echo "set(BARRIER_OUT          \"${bright}\")"
+    echo "set(PP                   ${PP})"
+    echo "set(PM                   ${PM})"
+    echo "set(DIRECTION            \"${DIRECTION}\")"
+    echo "set(C0                   ${C0})"
+    echo "set(C1                   ${C1})"
+    echo "set(C2                   ${C2})"
+    echo "set(C3                   ${C3})"
+    echo "set(C4                   ${C4})"
+    echo "set(C5                   ${C5})"
+    echo "set(PROB_IN              ${PROB_IN})"
+    echo "set(PROB_OUT             ${PROB_OUT})"
+  } >> ${INPUTFILE}
+
+  cd "$WORKSPACE/peoplebox/"
+  bash build.sh
+  ./darktrack_jetsoncnaf
+
+  cd "$WORKSPACE/peoplebox/data/"
+  mkdir -p "$WORKSPACE/peoplebox/data/${tag}_${bleft}_${bright}"
+  mv *.json "$WORKSPACE/peoplebox/data/${tag}_${bleft}_${bright}"
+
+  done
+  done
+  done
+
+  echo DONE
+} &>> log.txt
