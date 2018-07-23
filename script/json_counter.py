@@ -12,11 +12,11 @@ dates = {}
 count = {}
 cumulate = {}
 
-path = os.environ['WORKSPACE'] + os.path.sep + 'peoplebox' + os.path.sep + 'data' + os.path.sep + 'barriera_900'
-requires_fit=True
+#path = os.environ['WORKSPACE'] + os.path.sep + 'peoplebox' + os.path.sep + 'data' + os.path.sep + 'barriera_900'
+#requires_fit=True
 
-#path = os.environ['WORKSPACE'] + os.path.sep + 'peoplebox' + os.path.sep + 'data' + os.path.sep + 'newfit'
-#requires_fit=False
+path = os.environ['WORKSPACE'] + os.path.sep + 'peoplebox' + os.path.sep + 'data' + os.path.sep + 'newfit'
+requires_fit=False
 
 tags=[
 '20180716_1200',
