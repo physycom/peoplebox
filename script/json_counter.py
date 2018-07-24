@@ -29,20 +29,22 @@ path = os.environ['WORKSPACE'] + os.path.sep + 'peoplebox' + os.path.sep + 'data
 requires_fit=True
 requires_norm=True
 
-barriers=['700_700',
-          '750_750',
-          '800_800',
-          '850_850',
-          '900_900',
-          '950_950',
-          '1000_1000',
-          '1050_1050',
+barriers=[
+#          '700_700',
+#          '750_750',
+#          '800_800',
+#          '850_850',
+#          '900_900',
+#          '950_950',
+#          '1000_1000',
+#          '1050_1050',
           '1100_1100',
-          '1150_1150',
-          '1200_1200'
+#          '1150_1150',
+#          '1200_1200'
           ]
 
-tags=['20180716-1200',
+tags=[
+      '20180716-1200',
       '20180716-1600',
 #      '20180716-2000',
       '20180717-0800',
@@ -51,7 +53,7 @@ tags=['20180716-1200',
       #'20180717-1200-2',
       '20180719-2000',
       '20180720-0800',
-#      '20180720-1200'
+      '20180720-1200'
       ]
 
 gt = {
@@ -93,7 +95,7 @@ gt = {
               },
       '20180720-1200' : {
               'BETA_CNAF-IN'  : 212,  #pepe 228
-              'BETA_CNAF-OUT' : 144   #pepe 157
+              'BETA_CNAF-OUT' : 157   #bazz 144
               }
       }
 
@@ -160,10 +162,10 @@ for barrier in barriers:
             timestamp=int(file.split(os.path.sep)[-1].split('.')[0].split('_')[-1])
             #if timestamp < timestamp_min or timestamp > timestamp_max:
                 #continue
-    
+
             with open(folder + os.path.sep + file) as f:
                 data = json.load(f, object_pairs_hook=OrderedDict)
-    
+
             for key in data:
                 if not count[barrier][tag]:
                     count[barrier][tag][data[key]["people_count"][0]["id"]] = []
@@ -178,7 +180,7 @@ for barrier in barriers:
                 else:
                     count[barrier][tag][data[key]["people_count"][0]["id"]].append(data[key]["people_count"][0]["count"])
                     count[barrier][tag][data[key]["people_count"][1]["id"]].append(data[key]["people_count"][1]["count"])
-    
+
         for loc in count[barrier][tag]:
             cumulate[barrier][tag][loc] = np.cumsum(count[barrier][tag][loc])
             if cumulate[barrier][tag][loc][-1] > 0:
@@ -187,6 +189,8 @@ for barrier in barriers:
                 scaling_factor[barrier][tag][loc]=1
 for barrier in barriers:
     accumulated_error=0
+    accumulated_counted=0
+    accumulated_gt=0
     print()
     print(barrier, get_sf(scaling_factor[barrier])[id_in], get_sf(scaling_factor[barrier])[id_out])
     #print("%20s : %-13s %5s %5s %5s %4s%%" % ('time','location', 'track', 'fit', 'gt', 'err'))
@@ -197,30 +201,36 @@ for barrier in barriers:
         #print("%20s : %-13s %5d %5d %5d %4d%%" % (tag, id_in, cumulate[barrier][tag][id_in][-1], fitted[id_in], gt[tag][id_in], int((fitted[id_in] - gt[tag][id_in])/gt[tag][id_in]*100)))
         print("%20s : %-13s %5d %5d %4d%%" % (tag, id_in, cumulate[barrier][tag][id_in][-1], gt[tag][id_in], int((fitted[id_in] - gt[tag][id_in])/gt[tag][id_in]*100)))
         accumulated_error += abs(int((fitted[id_in] - gt[tag][id_in])/gt[tag][id_in]*100))
+        accumulated_counted += int(fitted[id_in])
+        accumulated_gt += gt[tag][id_in]
         #print("%20s : %-13s %5d %5d %5d %4d%%" % (tag, id_out, cumulate[barrier][tag][id_out][-1], fitted[id_out], gt[tag][id_out], int((fitted[id_out] - gt[tag][id_out])/gt[tag][id_out]*100)))
         print("%20s : %-13s %5d %5d %4d%%" % (tag, id_out, cumulate[barrier][tag][id_out][-1], gt[tag][id_out], int((fitted[id_out] - gt[tag][id_out])/gt[tag][id_out]*100)))
         accumulated_error += abs(int((fitted[id_in] - gt[tag][id_in])/gt[tag][id_in]*100))
-    print('Accumulated absolute percentage error: ', accumulated_error,'%')
+        accumulated_counted += int(fitted[id_out])
+        accumulated_gt += gt[tag][id_out]
+    print("%11s %8s %11s%% %15s%%" % ('Tot counted', 'tot gt', 'tot error', 'tot acc error'))
+    print("%11s %8s %11s%% %15s%%" % (accumulated_counted, accumulated_gt, int((accumulated_counted - accumulated_gt)/accumulated_gt*100), accumulated_error))
 
 
 #%%
 if False:
-    tag=tags[5]
-    fig, (ax, ax1, ax2) = plt.subplots(1,3)
-    subsample=1
-    [ax.plot(times[tag][::subsample], count[::subsample], '-o', label=label) for label, count in count[tag].items()]
-    [ax1.plot(times[tag][::subsample], cumul[::subsample], '-o', label=label) for label, cumul in cumulate[tag].items()]
-    ax2.hist([count for label, count in count[tag].items()], bins=np.arange(10))
-    ax.set_title("Counts vs time")
-    ax.set_xticks(times[tag][0::subsample])
-    ax.set_xticklabels(dates[tag][0::subsample], rotation=90, fontsize=10)
-    ax.legend()
-    ax1.set_title("Cumulative Counts vs time")
-    ax1.set_xticks(times[tag][0::subsample])
-    ax1.set_xticklabels(dates[tag][0::subsample], rotation=90, fontsize=10)
-    ax1.legend()
-    ax2.set_title("Counts histogram")
-    ax2.set_xticks(np.arange(10))
-    ax2.legend()
-    plt.savefig("report.png")
-    plt.show()
+    for barrier in barriers:
+        tag = tags[5]
+        fig, (ax, ax1, ax2) = plt.subplots(1,3)
+        subsample=1
+        [ax.plot(times[barrier][tag][::subsample], count[::subsample], '-o', label=label) for label, count in count[barrier][tag].items()]
+        [ax1.plot(times[barrier][tag][::subsample], cumul[::subsample], '-o', label=label) for label, cumul in cumulate[barrier][tag].items()]
+        ax2.hist([count for label, count in count[barrier][tag].items()], bins=np.arange(10))
+        ax.set_title("Counts vs time")
+        ax.set_xticks(times[barrier][tag][0::subsample])
+        ax.set_xticklabels(dates[barrier][tag][0::subsample], rotation=90, fontsize=10)
+        ax.legend()
+        ax1.set_title("Cumulative Counts vs time")
+        ax1.set_xticks(times[barrier][tag][0::subsample])
+        ax1.set_xticklabels(dates[barrier][tag][0::subsample], rotation=90, fontsize=10)
+        ax1.legend()
+        ax2.set_title("Counts histogram")
+        ax2.set_xticks(np.arange(10))
+        ax2.legend()
+        plt.savefig("report.png")
+        plt.show()
