@@ -81,6 +81,7 @@ float distance(const float x1, const float x2, const float y1, const float y2, c
 {
   return fsqrt((x1 - x2)*(x1 - x2)*scale_x + (y1 - y2)*(y1 - y2)*scale_y);
 }
+
 #define C0 @C0@  // coefficient of 5th grade polynomial
 #define C1 @C1@  // c_n multiplies x^n
 #define C2 @C2@

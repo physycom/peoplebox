@@ -92,10 +92,32 @@ int min_of_three(int i, int j, int k)
   return result;
 }
 
-#define C0 @C0@
-int fit(const unsigned int x)
+#define C0 @C0@  // coefficient of 5th grade polynomial
+#define C1 @C1@  // c_n multiplies x^n
+#define C2 @C2@
+#define C3 @C3@
+#define C4 @C4@
+#define C5 @C5@
+
+float fit(const int x)
 {
-  return C0 * x;
+  return C0 + C1 * x + C2 * x * x + C3 * x * x * x + C4 * x * x * x * x + C5 * x * x * x * x * x;
+}
+
+#define PROB_MISS  @PROB_MISS@
+
+int t(const int n, const double prob)
+{
+  int nt = n;
+  int i;
+  for(i=0; i<n; ++i)
+  {
+    double tmp = ((double)rand())/RAND_MAX;
+    if( tmp < (prob - ((int)prob)) )
+      ++nt;
+    nt += ((int)prob);
+  }
+  return nt;
 }
 
 int main(int argc, char** argv)
@@ -187,7 +209,7 @@ int main(int argc, char** argv)
   fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", loctag);
   fprintf(info_json, "\t\t\"detection\" : \"%s\",\n", "crowd");
   fprintf(info_json, "\t\t\"sw_ver\" : %d,\n", SW_VER_CROWD);
-  fprintf(info_json, "\t\t\"people_count\" : [{\"id\" : \"%s\", \"count\" : %u}],\n", loctag, fit(infos.max_person_number));
+  fprintf(info_json, "\t\t\"people_count\" : [{\"id\" : \"%s\", \"count\" : %u}],\n", loctag, t((int)(fit(infos.max_person_number) + .5), PROB_MISS));
   fprintf(info_json, "\t\t\"diagnostics\" : [{\"id\" : \"minimum_detected\", \"value\" : \"%u\"}]\n", infos.min_person_number);
   fprintf(info_json, "\t}\n");
   fprintf(info_json, "}");
