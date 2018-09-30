@@ -7,4 +7,4 @@
 	url = https://github.com/danielaparker/jsoncons.git
 [submodule "src/boxvars"]
 	path = src/boxvars
-	url = https://github.com/physycom/peoplebox-vars.git
+	url = git@github.com:physycom/peoplebox-vars.git
