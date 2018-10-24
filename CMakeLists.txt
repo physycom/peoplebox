@@ -52,6 +52,7 @@ include_directories(${JSONCONS_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/src)
 
 file(GLOB jetson_settings ${CMAKE_SOURCE_DIR}/src/boxvars/jetson*.cmakevars)
 file(GLOB raspi_settings ${CMAKE_SOURCE_DIR}/src/boxvars/raspi*.cmakevars)
+file(GLOB boat_settings ${CMAKE_SOURCE_DIR}/src/boxvars/ID*.cmakevars)
 
 # crowdcounting
 add_executable(json_triplet_packer ${CMAKE_SOURCE_DIR}/src/json_triplet_packer.cpp)
@@ -67,8 +68,8 @@ foreach(jset IN LISTS raspi_settings)
   add_dependencies(crowdcounting darkcrowd_${tag})
 endforeach()
 
-# tracking
-add_custom_target(tracking)
+# tracking humans
+add_custom_target(tracking_humans)
 foreach(jset IN LISTS jetson_settings)
   include(${jset})
   get_filename_component(tag ${jset} NAME_WE)
@@ -76,7 +77,19 @@ foreach(jset IN LISTS jetson_settings)
   add_executable(darktrack_${tag} ${CMAKE_SOURCE_DIR}/src/auto/darktrack_${tag}.c)
   target_link_libraries(darktrack_${tag} darknet_lib ${linked_libs} ${CMAKE_THREAD_LIBS_INIT})
   install(TARGETS darktrack_${tag} DESTINATION ${CMAKE_SOURCE_DIR})
-  add_dependencies(tracking darktrack_${tag})
+  add_dependencies(tracking_humans darktrack_${tag})
+endforeach()
+
+# tracking boats
+add_custom_target(tracking_boats)
+foreach(jset IN LISTS boat_settings)
+  include(${jset})
+  get_filename_component(tag ${jset} NAME_WE)
+  configure_file(${CMAKE_SOURCE_DIR}/src/darkboat.c.in ${CMAKE_SOURCE_DIR}/src/auto/darkboat_${tag}.c)
+  add_executable(darkboat_${tag} ${CMAKE_SOURCE_DIR}/src/auto/darkboat_${tag}.c)
+  target_link_libraries(darkboat_${tag} darknet_lib ${linked_libs} ${CMAKE_THREAD_LIBS_INIT})
+  install(TARGETS darkboat_${tag} DESTINATION ${CMAKE_SOURCE_DIR})
+  add_dependencies(tracking_boats darkboat_${tag})
 endforeach()
 
 add_custom_target(tools)

@@ -55,6 +55,8 @@ libdarknet_cuda.a
 
 darktest_*
 darktest_*.exe
+darkboat_*
+darkboat_*.exe
 darktrack_*
 darktrack_*.exe
 darkcrowd
