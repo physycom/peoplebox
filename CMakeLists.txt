@@ -52,7 +52,8 @@ include_directories(${JSONCONS_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/src)
 
 file(GLOB jetson_settings ${CMAKE_SOURCE_DIR}/src/boxvars/jetson*.cmakevars)
 file(GLOB raspi_settings ${CMAKE_SOURCE_DIR}/src/boxvars/raspi*.cmakevars)
-file(GLOB boat_settings ${CMAKE_SOURCE_DIR}/src/boxvars/ID*.cmakevars)
+file(GLOB boat_settings ${CMAKE_SOURCE_DIR}/src/boxvars/ID_278*.cmakevars)
+file(GLOB car_settings ${CMAKE_SOURCE_DIR}/src/boxvars/ID_248*.cmakevars)
 
 # crowdcounting
 add_executable(json_triplet_packer ${CMAKE_SOURCE_DIR}/src/json_triplet_packer.cpp)
@@ -92,11 +93,22 @@ foreach(jset IN LISTS boat_settings)
   add_dependencies(tracking_boats darkboat_${tag})
 endforeach()
 
+# tracking cars
+add_custom_target(tracking_cars)
+foreach(jset IN LISTS boat_settings)
+  include(${jset})
+  get_filename_component(tag ${jset} NAME_WE)
+  configure_file(${CMAKE_SOURCE_DIR}/src/darkcar.c.in ${CMAKE_SOURCE_DIR}/src/auto/darkcar_${tag}.c)
+  add_executable(darkcar_${tag} ${CMAKE_SOURCE_DIR}/src/auto/darkcar_${tag}.c)
+  target_link_libraries(darkcar_${tag} darknet_lib ${linked_libs} ${CMAKE_THREAD_LIBS_INIT})
+  install(TARGETS darkcar_${tag} DESTINATION ${CMAKE_SOURCE_DIR})
+  add_dependencies(tracking_boats darkcar_${tag})
+endforeach()
+
 add_custom_target(tools)
 if(OpenCV_FOUND)
   # tools
-  file(GLOB settings ${CMAKE_SOURCE_DIR}/src/boxvars/*.cmakevars)
-  foreach(set IN LISTS settings)
+  foreach(set IN LISTS jetson_settings raspi_settings)
     include(${set})
     get_filename_component(tag ${set} NAME_WE)
     configure_file(${CMAKE_SOURCE_DIR}/src/save_frame.cpp.in ${CMAKE_SOURCE_DIR}/src/auto/save_frame_${tag}.cpp)
