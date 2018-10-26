@@ -4,12 +4,7 @@
 
 #include <opencv2/opencv.hpp>
 
-#include <common.h>
-
-#define ERROR_VIDEO_STREAM              1
-#define ERROR_DUMP_FRAME                2
-
-#define IMAGE_FOLDER                    "images"
+#include "common.h"
 
 #define CAM_FPS                         3
 #define ENABLE_TIMESTAMP_BASED_SAMPLING 1

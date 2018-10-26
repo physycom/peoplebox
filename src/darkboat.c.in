@@ -3,9 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-#include <common.h>
-
-#include "image.h"
+#include "darktrack_utils.h"
 
 static char** demo_names;
 static int demo_classes;
@@ -27,21 +25,6 @@ static int demo_done = 0;
 static int demo_total = 0;
 double demo_time;
 
-// physycom add
-#define MAX_FRAME_INFO_TO_STORE 10                        // size of json output
-#define MAX_LINE_LEN            20                        // static char buffer size
-#define JSON_FOLDER             "data"                    // output folder
-#define SAMPLING_DT_SEC         5                         // dt between single records
-#define FPS                     3                         // source fps
-#define SAMPLING_FRAME_RATE     (SAMPLING_DT_SEC * FPS)   // number of frames between records
-
-#define SW_VER_TRACK            605
-
-#define ERR_NO_FILE             111
-#define ERR_NO_STREAM           112
-#define ERR_NO_INFO_JSON        113
-#define ERR_THREAD_CREATION     222
-
 // BARRIER
 #define MAX_NUM_BOAT            50                        // max size for array of BOAT coords
 #define BARRIER_TOP             @BARRIER_TOP@             // in pixel units
@@ -55,7 +38,7 @@ double demo_time;
 #define DIRECTION               "@DIRECTION@"             // set barrier orientation
 
 // tracking
-static float old_coords[MAX_NUM_BOAT][2]; // swap variable for yolo
+static float old_coords[MAX_NUM_BOAT][2];   // swap variable for yolo
 static int old_size = 0;                    // size filled
 static int UP = 0;                          // counter ^
 static int DOWN = 0;                        // counter _
@@ -64,25 +47,10 @@ static int RIGHT = 0;                       // counter >
 static float x, y, min_dist, dist;
 static int mins;
 
-float fsqrt(const float x)
-{
-  const float xhalf = 0.5f * x;
-  union // get bits for floating value
-  {
-      float x;
-      int i;
-  } u;
-  u.x = x;
-  u.i = 0x5f3759df - (u.i >> 1);  // gives initial guess y0
-  return x * u.x * (1.5f - xhalf * u.x * u.x);// Newton step, repeating increases accuracy
-}
+#define PROB_IN  @PROB_IN@
+#define PROB_OUT @PROB_OUT@
 
-float distance(const float x1, const float x2, const float y1, const float y2, const float scale_x, const float scale_y)
-{
-  return fsqrt((x1 - x2)*(x1 - x2)*scale_x + (y1 - y2)*(y1 - y2)*scale_y);
-}
-
-#define C0 @C0@  // coefficient of 5th grade polynomial
+#define C0 @C0@ // coefficient of 5th grade polynomial
 #define C1 @C1@  // c_n multiplies x^n
 #define C2 @C2@
 #define C3 @C3@
@@ -92,23 +60,6 @@ float distance(const float x1, const float x2, const float y1, const float y2, c
 float fit(const int x)
 {
   return C0 + C1 * x + C2 * x * x + C3 * x * x * x + C4 * x * x * x * x + C5 * x * x * x * x * x;
-}
-
-#define PROB_IN  @PROB_IN@
-#define PROB_OUT @PROB_OUT@
-
-int t(const int n, const double prob)
-{
-  int nt = n;
-  int i;
-  for(i=0; i<n; ++i)
-  {
-    double tmp = ((double)rand())/RAND_MAX;
-    if( tmp < (prob - ((int)prob)) )
-      ++nt;
-    nt += ((int)prob);
-  }
-  return nt;
 }
 
 // flux
@@ -128,13 +79,6 @@ static int old_n0; static int old_n1;
 static int old_n2; static int old_n3;
 static int na; static int nb;
 
-// general
-typedef struct frame_info {
-  double timestamp;
-  int cnt_in, cnt_out;
-  int flux_in, flux_out;
-  int frame_number;
-} frame_info;
 static frame_info* infos;
 static int boat_name_index;
 static char boat_label[] = "boat";
@@ -145,33 +89,6 @@ static time_t tnow_t;
 static struct tm* tm_tnow;
 static char human_timenow[MAX_LINE_LEN];
 static char json_name[200];
-
-// image manipulation
-image get_rotated_image_from_stream(CvCapture* cap)
-{
-  IplImage* src = cvQueryFrame(cap);
-  if (!src)
-    return make_empty_image(0, 0, 0);
-  IplImage* trans = cvCreateImage(cvSize(src->height, src->width), src->depth, src->nChannels);
-  cvTranspose(src, trans);  // transposition +
-  cvFlip(trans, trans, 0);    // hor flip = 90 counterclockwise rotation
-  image im = ipl_to_image(trans);
-  rgbgr_image(im);
-  return im;
-}
-
-int fill_rotated_image_from_stream(CvCapture* cap, image im)
-{
-  IplImage* src = cvQueryFrame(cap);
-  if (!src)
-    return 0;
-  IplImage* trans = cvCreateImage(cvSize(src->height, src->width), src->depth, src->nChannels);
-  cvTranspose(src, trans);  // transposition +
-  cvFlip(trans, trans, 0);    // hor flip = 90 counterclockwise rotation
-  ipl_into_image(trans, im);
-  rgbgr_image(im);
-  return 1;
-}
 
 // thread functions
 void* fetch_in_thread(void* ptr)

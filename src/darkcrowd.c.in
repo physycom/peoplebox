@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "image.h"
+#include "darktrack_utils.h"
 
 static char** demo_names;
 static int demo_classes;
@@ -25,32 +25,9 @@ static int demo_total = 0;
 double demo_time;
 double now_time;
 
-/* physycom add */
-#define MAX_LINE_LEN                 11
-#define ERR_NO_FILE                  12
-#define ERR_NO_INPUT_IMAGE           13
-#define ERR_NO_INFO_JSON             14
-#define ERR_WRONG_COMMANDLINE        15
-
-#define NUMBER_OF_FILES_TO_ANALYZE   3
-#define SW_VER_CROWD                 103
-
-#ifdef VERBOSE
-#define MESSAGE(...) fprintf(stdout, __VA_ARGS__)
-#define MESSAGE_ERR(...) fprintf(stderr, __VA_ARGS__)
-#else
-#define MESSAGE(...)
-#define MESSAGE_ERR(...)
-#endif
-
 static int person_name_index;
 static char person_label[] = "person";
 
-typedef struct frame_info {
-  unsigned int timestamp;
-  unsigned int max_person_number;
-  unsigned int min_person_number;
-} frame_info;
 static frame_info infos;
 
 static double tnow;
@@ -61,38 +38,9 @@ static char json_name[200];
 static char* jsonpath;
 static char* loctag;
 
-char* concat(const char* s1, const char* s2)
-{
-  const size_t len1 = strlen(s1);
-  const size_t len2 = strlen(s2);
-  char* result = malloc(len1 + len2 + 1); //+1 for the null-terminator
-  //in real code you would check for errors in malloc here
-  memcpy(result, s1, len1);
-  memcpy(result + len1, s2, len2 + 1); //+1 to copy the null-terminator
-  return result;
-}
+#define PROB_MISS @PROB_MISS@
 
-int max_of_three(int i, int j, int k)
-{
-  int result = i;
-  if (j > result)
-    result = j;
-  if (k > result)
-    result = k;
-  return result;
-}
-
-int min_of_three(int i, int j, int k)
-{
-  int result = i;
-  if (j < result)
-    result = j;
-  if (k < result)
-    result = k;
-  return result;
-}
-
-#define C0 @C0@  // coefficient of 5th grade polynomial
+#define C0 @C0@ // coefficient of 5th grade polynomial
 #define C1 @C1@  // c_n multiplies x^n
 #define C2 @C2@
 #define C3 @C3@
@@ -104,21 +52,6 @@ float fit(const int x)
   return C0 + C1 * x + C2 * x * x + C3 * x * x * x + C4 * x * x * x * x + C5 * x * x * x * x * x;
 }
 
-#define PROB_MISS  @PROB_MISS@
-
-int t(const int n, const double prob)
-{
-  int nt = n;
-  int i;
-  for(i=0; i<n; ++i)
-  {
-    double tmp = ((double)rand())/RAND_MAX;
-    if( tmp < (prob - ((int)prob)) )
-      ++nt;
-    nt += ((int)prob);
-  }
-  return nt;
-}
 
 int main(int argc, char** argv)
 {
@@ -195,7 +128,7 @@ int main(int argc, char** argv)
     MESSAGE("Puny humans  : %d\n", person_num[i]);
 #endif
   }
-  infos.timestamp = (unsigned int)tnow;
+  infos.timestamp_uint = (unsigned int)tnow;
   infos.max_person_number = max_of_three(person_num[0], person_num[1], person_num[2]);
   infos.min_person_number = min_of_three(person_num[0], person_num[1], person_num[2]);
   FILE* info_json = fopen(jsonpath, "w");
@@ -205,7 +138,7 @@ int main(int argc, char** argv)
   }
   fprintf(info_json, "{\n");
   fprintf(info_json, "\t\"frame_00000\" : {\n");
-  fprintf(info_json, "\t\t\"timestamp\" : %u,\n", infos.timestamp);
+  fprintf(info_json, "\t\t\"timestamp\" : %u,\n", infos.timestamp_uint);
   fprintf(info_json, "\t\t\"id_box\" : \"%s\",\n", loctag);
   fprintf(info_json, "\t\t\"detection\" : \"%s\",\n", "crowd");
   fprintf(info_json, "\t\t\"sw_ver\" : %d,\n", SW_VER_CROWD);

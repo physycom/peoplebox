@@ -1,13 +1,10 @@
-#include "opencv2/opencv.hpp"
+#include <opencv2/opencv.hpp>
 #include <ctime>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
 
-#define ERROR_CLI               111
-#define ERROR_VIDEO_STREAM      222
-#define ERROR_DUMP_FRAME        333
-#define IMAGE_FOLDER            "frames"
+#include "common.h"
 
 int main(int argc, char** argv)
 {
