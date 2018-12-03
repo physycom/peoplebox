@@ -1,5 +1,9 @@
 #include "common.h"
 #include "image.h"
+#include "layer.h"
+#include "network.h"
+#include "utils.h"
+#include "parser.h"
 
 #define MAX_FRAME_INFO_TO_STORE    10                        // size of json output
 #define MAX_LINE_LEN               20                        // static char buffer size
@@ -25,9 +29,6 @@ typedef struct frame_info {
   unsigned int max_person_number;
   unsigned int min_person_number;
 } frame_info;
-
-image get_rotated_image_from_stream(CvCapture* );
-int fill_rotated_image_from_stream(CvCapture* , image );
 
 char* concat(const char* , const char* );
 int max_of_three(int , int , int );

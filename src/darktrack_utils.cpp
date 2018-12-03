@@ -34,39 +34,11 @@ int t(const int n, const double prob)
 }
 
 
-// image manipulation
-image get_rotated_image_from_stream(CvCapture* cap)
-{
-  IplImage* src = cvQueryFrame(cap);
-  if (!src)
-    return make_empty_image(0, 0, 0);
-  IplImage* trans = cvCreateImage(cvSize(src->height, src->width), src->depth, src->nChannels);
-  cvTranspose(src, trans);  // transposition +
-  cvFlip(trans, trans, 0);    // hor flip = 90 counterclockwise rotation
-  image im = ipl_to_image(trans);
-  rgbgr_image(im);
-  return im;
-}
-
-
-int fill_rotated_image_from_stream(CvCapture* cap, image im)
-{
-  IplImage* src = cvQueryFrame(cap);
-  if (!src)
-    return 0;
-  IplImage* trans = cvCreateImage(cvSize(src->height, src->width), src->depth, src->nChannels);
-  cvTranspose(src, trans);  // transposition +
-  cvFlip(trans, trans, 0);    // hor flip = 90 counterclockwise rotation
-  ipl_into_image(trans, im);
-  rgbgr_image(im);
-  return 1;
-}
-
 char* concat(const char* s1, const char* s2)
 {
   const size_t len1 = strlen(s1);
   const size_t len2 = strlen(s2);
-  char* result = malloc(len1 + len2 + 1); //+1 for the null-terminator
+  char* result = (char*)malloc(len1 + len2 + 1); //+1 for the null-terminator
   //in real code you would check for errors in malloc here
   memcpy(result, s1, len1);
   memcpy(result + len1, s2, len2 + 1); //+1 to copy the null-terminator
