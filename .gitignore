@@ -19,8 +19,6 @@ uselib_*
 save_frame
 save_stream
 src/auto/*
-data/
-data
 
 # OS Generated #
 .DS_Store*

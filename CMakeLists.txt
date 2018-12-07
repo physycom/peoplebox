@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+
+if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+  set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+endif()
+
 project(peoplebox)
 
 enable_language(C)
@@ -37,7 +42,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
   target_link_libraries(darktrack m)
 endif()
 if(MSVC)
-  target_link_libraries(darktrack ${PTHREADS_LIBRARIES} wsock32 ws2_32)
+  target_link_libraries(darktrack ${PTHREADS_LIBRARY} wsock32 ws2_32)
 endif()
 
 if(OpenCV_FOUND)
@@ -55,11 +60,11 @@ if(OpenCV_FOUND)
 endif()
 
 if(CUDNN_FOUND)
-  target_link_libraries(darktrack "${CUDNN_LIBRARY}")
+  target_link_libraries(darktrack ${CUDNN_LIBRARY})
 endif()
 
 if(OpenCV_FOUND)
-  target_link_libraries(darktrack "${OpenCV_LIBS}")
+  target_link_libraries(darktrack ${OpenCV_LIBS})
 endif()
 
 if(OPENMP_FOUND)
@@ -71,10 +76,14 @@ if(CMAKE_COMPILER_IS_GNUCC)
 endif()
 
 if(MSVC)
-  target_link_libraries(darktrack ${PTHREADS_LIBRARIES} wsock32 ws2_32)
+  target_link_libraries(darktrack ${PTHREADS_LIBRARY})
+  target_link_libraries(darktrack wsock32 ws2_32)
 endif()
 
 target_link_libraries(darktrack Threads::Threads)
 target_link_libraries(darktrack darklib)
 
-install(TARGETS darklib uselib uselib_track darktrack DESTINATION ${CMAKE_SOURCE_DIR}/)
+if(OpenCV_VERSION_MAJOR GREATER_EQUAL 3)
+  install(TARGETS uselib_track DESTINATION ${CMAKE_SOURCE_DIR}/)
+endif()
+install(TARGETS darklib uselib darktrack DESTINATION ${CMAKE_SOURCE_DIR}/)
