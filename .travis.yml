@@ -5,12 +5,6 @@ matrix:
 
     - os: osx
       compiler: gcc
-      name: macOS - gcc@5
-      env:
-        - MATRIX_EVAL="brew update && brew install gcc@5 gcc opencv && brew upgrade cmake && CC=gcc-5 && CXX=g++-5"
-
-    - os: osx
-      compiler: gcc
       name: macOS - native gcc (llvm backend)
       env:
         - MATRIX_EVAL="brew update && brew install gcc opencv && brew upgrade cmake"
