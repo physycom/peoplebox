@@ -79,3 +79,4 @@ images/
 *.sw_ver
 script/*json
 data
+*.exe
