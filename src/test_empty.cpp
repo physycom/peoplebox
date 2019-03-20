@@ -210,27 +210,6 @@ int main(int argc, char *argv[])
 
                 track_kalman_t track_kalman;
 
-#ifdef ZED_STEREO
-                sl::InitParameters init_params;
-                init_params.depth_minimum_distance = 0.5;
-                init_params.depth_mode = sl::DEPTH_MODE_ULTRA;
-                init_params.camera_resolution = sl::RESOLUTION_HD720;
-                init_params.coordinate_units = sl::UNIT_METER;
-                //init_params.sdk_cuda_ctx = (CUcontext)detector.get_cuda_context();
-                init_params.sdk_gpu_id = detector.cur_gpu_id;
-                init_params.camera_buffer_count_linux = 2;
-                if (file_ext == "svo") init_params.svo_input_filename.set(filename.c_str());
-                if (filename == "zed_camera" || file_ext == "svo") {
-                    std::cout << "ZED 3D Camera " << zed.open(init_params) << std::endl;
-                    if (!zed.isOpened()) {
-                        std::cout << " Error: ZED Camera should be connected to USB 3.0. And ZED_SDK should be installed. \n";
-                        getchar();
-                        return 0;
-                    }
-                    cur_frame = zed_capture_rgb(zed);
-                    use_zed_camera = true;
-                }
-#endif  // ZED_STEREO
 
                 cv::VideoCapture cap;
                 if (filename == "web_camera") {
