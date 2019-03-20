@@ -5,6 +5,3 @@
 [submodule "jsoncons"]
 	path = jsoncons
 	url = https://github.com/danielaparker/jsoncons.git
-[submodule "src/boxvars"]
-	path = src/boxvars
-	url = git@github.com:physycom/peoplebox-vars.git
