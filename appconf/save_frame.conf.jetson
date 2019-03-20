@@ -1,5 +1,0 @@
-# no user-specific symbols allowed
-APP_WORKDIR=/home/nvidia/Codice/peoplebox/
-APP_PATH=/home/nvidia/Codice/peoplebox/
-APP_ARGS=""
-APP_LOG_BASE=physycom_save_frame

@@ -1,5 +1,0 @@
-# no user-specific symbols allowed
-APP_WORKDIR=/home/pi/Codice/peoplebox/
-APP_PATH=/home/pi/Codice/peoplebox/
-APP_ARGS=""
-APP_LOG_BASE=physycom_save_frame
