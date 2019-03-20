@@ -1,7 +1,7 @@
 [submodule "darknet"]
 	path = darknet
-	url = https://github.com/cenit/darknet
-	branch = dev/cenit/yolov3
+	url = https://github.com/allefabbri/darknet
+	branch = dev/tracking
 [submodule "jsoncons"]
 	path = jsoncons
 	url = https://github.com/danielaparker/jsoncons.git
