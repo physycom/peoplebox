@@ -10,16 +10,6 @@
 #include <mutex>         // std::mutex, std::unique_lock
 #include <cmath>
 
-
-// It makes sense only for video-Camera (not for video-File)
-// To use - uncomment the following line. Optical-flow is supported only by OpenCV 3.x - 4.x
-//#define TRACK_OPTFLOW
-//#define GPU
-
-// To use 3D-stereo camera ZED - uncomment the following line. ZED_SDK should be installed.
-//#define ZED_STEREO
-
-
 #include "yolo_v2_class.hpp"    // imported functions from DLL
 
 #ifdef OPENCV
@@ -35,13 +25,6 @@ std::vector<bbox_t> get_3d_coordinates(std::vector<bbox_t> bbox_vect, cv::Mat xy
 #define OPENCV_VERSION CVAUX_STR(CV_VERSION_MAJOR)"" CVAUX_STR(CV_VERSION_MINOR)"" CVAUX_STR(CV_VERSION_REVISION)
 #ifndef USE_CMAKE_LIBS
 #pragma comment(lib, "opencv_world" OPENCV_VERSION ".lib")
-#ifdef TRACK_OPTFLOW
-#pragma comment(lib, "opencv_cudaoptflow" OPENCV_VERSION ".lib")
-#pragma comment(lib, "opencv_cudaimgproc" OPENCV_VERSION ".lib")
-#pragma comment(lib, "opencv_core" OPENCV_VERSION ".lib")
-#pragma comment(lib, "opencv_imgproc" OPENCV_VERSION ".lib")
-#pragma comment(lib, "opencv_highgui" OPENCV_VERSION ".lib")
-#endif    // TRACK_OPTFLOW
 #endif    // USE_CMAKE_LIBS
 #else
 #define OPENCV_VERSION CVAUX_STR(CV_VERSION_EPOCH)"" CVAUX_STR(CV_VERSION_MAJOR)"" CVAUX_STR(CV_VERSION_MINOR)
@@ -52,40 +35,41 @@ std::vector<bbox_t> get_3d_coordinates(std::vector<bbox_t> bbox_vect, cv::Mat xy
 #endif    // USE_CMAKE_LIBS
 #endif    // CV_VERSION_EPOCH
 
-
 void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std::string> obj_names,
-    int current_det_fps = -1, int current_cap_fps = -1)
+                int current_det_fps = -1, int current_cap_fps = -1)
 {
-    int const colors[6][3] = { { 1,0,1 },{ 0,0,1 },{ 0,1,1 },{ 0,1,0 },{ 1,1,0 },{ 1,0,0 } };
+    int const colors[6][3] = {{1, 0, 1}, {0, 0, 1}, {0, 1, 1}, {0, 1, 0}, {1, 1, 0}, {1, 0, 0}};
 
-    for (auto &i : result_vec) {
-        cv::Scalar color = obj_id_to_color(i.obj_id);
-        cv::rectangle(mat_img, cv::Rect(i.x, i.y, i.w, i.h), color, 2);
-        if (obj_names.size() > i.obj_id) {
-            std::string obj_name = obj_names[i.obj_id];
-            if (i.track_id > 0) obj_name += " - " + std::to_string(i.track_id);
-            cv::Size const text_size = getTextSize(obj_name, cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, 2, 0);
-            int max_width = (text_size.width > i.w + 2) ? text_size.width : (i.w + 2);
-            max_width = std::max(max_width, (int)i.w + 2);
-            //max_width = std::max(max_width, 283);
-            std::string coords_3d;
-            if (!std::isnan(i.z_3d)) {
-                std::stringstream ss;
-                ss << std::fixed << std::setprecision(2) << "x:" << i.x_3d << "m y:" << i.y_3d << "m z:" << i.z_3d << "m ";
-                coords_3d = ss.str();
-                cv::Size const text_size_3d = getTextSize(ss.str(), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, 1, 0);
-                int const max_width_3d = (text_size_3d.width > i.w + 2) ? text_size_3d.width : (i.w + 2);
-                if (max_width_3d > max_width) max_width = max_width_3d;
-            }
+    for (auto &i : result_vec)
+    {
+        cv::Scalar color = obj_id_to_color(i.track_id % 6);
+        cv::circle(mat_img, cv::Point(i.x + i.w / 2, i.y + i.h / 2), 20, color, 2);
+        //        if (obj_names.size() > i.obj_id) {
+        //            std::string obj_name = obj_names[i.obj_id];
+        //            if (i.track_id > 0) obj_name += " - " + std::to_string(i.track_id);
+        //            cv::Size const text_size = getTextSize(obj_name, cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, 2, 0);
+        //            int max_width = (text_size.width > i.w + 2) ? text_size.width : (i.w + 2);
+        //            max_width = std::max(max_width, (int)i.w + 2);
+        //            //max_width = std::max(max_width, 283);
+        //            std::string coords_3d;
+        //            if (!std::isnan(i.z_3d)) {
+        //                std::stringstream ss;
+        //                ss << std::fixed << std::setprecision(2) << "x:" << i.x_3d << "m y:" << i.y_3d << "m z:" << i.z_3d << "m ";
+        //                coords_3d = ss.str();
+        //                cv::Size const text_size_3d = getTextSize(ss.str(), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, 1, 0);
+        //                int const max_width_3d = (text_size_3d.width > i.w + 2) ? text_size_3d.width : (i.w + 2);
+        //                if (max_width_3d > max_width) max_width = max_width_3d;
+        //            }
 
-            cv::rectangle(mat_img, cv::Point2f(std::max((int)i.x - 1, 0), std::max((int)i.y - 35, 0)),
-                cv::Point2f(std::min((int)i.x + max_width, mat_img.cols - 1), std::min((int)i.y, mat_img.rows - 1)),
-                color, CV_FILLED, 8, 0);
-            putText(mat_img, obj_name, cv::Point2f(i.x, i.y - 16), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0, 0, 0), 2);
-            if(!coords_3d.empty()) putText(mat_img, coords_3d, cv::Point2f(i.x, i.y-1), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cv::Scalar(0, 0, 0), 1);
-        }
+        //            cv::rectangle(mat_img, cv::Point2f(std::max((int)i.x - 1, 0), std::max((int)i.y - 35, 0)),
+        //                cv::Point2f(std::min((int)i.x + max_width, mat_img.cols - 1), std::min((int)i.y, mat_img.rows - 1)),
+        //                color, CV_FILLED, 8, 0);
+        //            putText(mat_img, obj_name, cv::Point2f(i.x, i.y - 16), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0, 0, 0), 2);
+        //            if(!coords_3d.empty()) putText(mat_img, coords_3d, cv::Point2f(i.x, i.y-1), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cv::Scalar(0, 0, 0), 1);
+        //        }
     }
-    if (current_det_fps >= 0 && current_cap_fps >= 0) {
+    if (current_det_fps >= 0 && current_cap_fps >= 0)
+    {
         std::string fps_str = "FPS detection: " + std::to_string(current_det_fps) + "   FPS capture: " + std::to_string(current_cap_fps);
         putText(mat_img, fps_str, cv::Point2f(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(50, 255, 0), 2);
     }
@@ -165,69 +149,50 @@ int main(int argc, char *argv[])
     Detector detector(cfg_file, weights_file);
 
     auto obj_names = objects_names_from_file(names_file);
-    std::string out_videofile = "result.avi";
-    bool const save_output_videofile = false;   // true - for history
+    bool const save_output_videofile = true;   // true - for history
     bool const send_network = false;        // true - for remote detection
     bool const use_kalman_filter = false;   // true - for stationary camera
 
     bool detection_sync = true;             // true - for video-file
 
-#ifdef TRACK_OPTFLOW    // for slow GPU
-    detection_sync = false;
-    Tracker_optflow tracker_flow;
-    //detector.wait_stream = true;
-#endif  // TRACK_OPTFLOW
+    std::vector<std::vector<bbox_t>> tracks;
 
-
-    while (true)
+    try
     {
-        std::cout << "input image or video filename: ";
-        if(filename.size() == 0) std::cin >> filename;
-        if (filename.size() == 0) break;
+        preview_boxes_t large_preview(100, 150, false), small_preview(50, 50, true);
+        bool show_small_boxes = false;
 
-        try {
-#ifdef OPENCV
-            preview_boxes_t large_preview(100, 150, false), small_preview(50, 50, true);
-            bool show_small_boxes = false;
+        std::string const file_ext = filename.substr(filename.find_last_of(".") + 1);
+        std::string const protocol = filename.substr(0, 7);
+        if (file_ext == "avi" || file_ext == "mp4" || file_ext == "mjpg" || file_ext == "mov" ||     // video file
+            protocol == "rtmp://" || protocol == "rtsp://" || protocol == "http://" || protocol == "https:/"     // video network stream
+            )
+        {
+            if (protocol == "rtsp://" || protocol == "http://" || protocol == "https:/" /* || filename == "zed_camera" || filename == "web_camera" */ )
+                detection_sync = false;
 
-            std::string const file_ext = filename.substr(filename.find_last_of(".") + 1);
-            std::string const protocol = filename.substr(0, 7);
-            if (file_ext == "avi" || file_ext == "mp4" || file_ext == "mjpg" || file_ext == "mov" ||     // video file
-                protocol == "rtmp://" || protocol == "rtsp://" || protocol == "http://" || protocol == "https:/" ||    // video network stream
-                filename == "zed_camera" || file_ext == "svo" || filename == "web_camera")   // ZED stereo camera
+            cv::Mat cur_frame;
+            std::atomic<int> fps_cap_counter(0), fps_det_counter(0);
+            std::atomic<int> current_fps_cap(0), current_fps_det(0);
+            std::atomic<bool> exit_flag(false);
+            std::chrono::steady_clock::time_point steady_start, steady_end;
+            int video_fps = 25;
 
-            {
-                if (protocol == "rtsp://" || protocol == "http://" || protocol == "https:/" || filename == "zed_camera" || filename == "web_camera")
-                    detection_sync = false;
+            track_kalman_t track_kalman;
 
-                cv::Mat cur_frame;
-                std::atomic<int> fps_cap_counter(0), fps_det_counter(0);
-                std::atomic<int> current_fps_cap(0), current_fps_det(0);
-                std::atomic<bool> exit_flag(false);
-                std::chrono::steady_clock::time_point steady_start, steady_end;
-                int video_fps = 25;
-                bool use_zed_camera = false;
-
-                track_kalman_t track_kalman;
-
-
-                cv::VideoCapture cap;
-                if (filename == "web_camera") {
-                    cap.open(0);
-                    video_fps = cap.get(CV_CAP_PROP_FPS);
-                    cap >> cur_frame;
-                } else if (!use_zed_camera) {
-                    cap.open(filename);
-                    video_fps = cap.get(CV_CAP_PROP_FPS);
-                    cap >> cur_frame;
-                }
-                cv::Size const frame_size = cur_frame.size();
-                //cv::Size const frame_size(cap.get(CV_CAP_PROP_FRAME_WIDTH), cap.get(CV_CAP_PROP_FRAME_HEIGHT));
-                std::cout << "\n Video size: " << frame_size << std::endl;
+            cv::VideoCapture cap;
+            cap.open(filename);
+            video_fps = cap.get(CV_CAP_PROP_FPS);
+            cap >> cur_frame;
+            cv::Size const frame_size = cur_frame.size();
+            //cv::Size const frame_size(cap.get(CV_CAP_PROP_FRAME_WIDTH), cap.get(CV_CAP_PROP_FRAME_HEIGHT));
+            std::cout << "\n Video size: " << frame_size << std::endl;
 
                 cv::VideoWriter output_video;
+                std::string out_videofile = filename + ".track.avi";
                 if (save_output_videofile)
-                    output_video.open(out_videofile, CV_FOURCC('D', 'I', 'V', 'X'), std::max(35, video_fps), frame_size, true);
+                    //output_video.open(out_videofile, CV_FOURCC('D', 'I', 'V', 'X'), std::max(35, video_fps), frame_size, true);
+                    output_video.open(out_videofile, CV_FOURCC('M', 'J', 'P', 'G'), std::max(35, video_fps), frame_size, true);
 
                 struct detection_data_t {
                     cv::Mat cap_frame;
@@ -237,8 +202,6 @@ int main(int argc, char *argv[])
                     bool new_detection;
                     uint64_t frame_id;
                     bool exit_flag;
-                    cv::Mat zed_cloud;
-                    std::queue<cv::Mat> track_optflow_queue;
                     detection_data_t() : exit_flag(false), new_detection(false) {}
                 };
 
@@ -256,17 +219,7 @@ int main(int argc, char *argv[])
                     detection_data_t detection_data;
                     do {
                         detection_data = detection_data_t();
-#ifdef ZED_STEREO
-                        if (use_zed_camera) {
-                            while (zed.grab() != sl::SUCCESS) std::this_thread::sleep_for(std::chrono::milliseconds(2));
-                            detection_data.cap_frame = zed_capture_rgb(zed);
-                            detection_data.zed_cloud = zed_capture_3d(zed);
-                        }
-                        else
-#endif   // ZED_STEREO
-                        {
-                            cap >> detection_data.cap_frame;
-                        }
+                        cap >> detection_data.cap_frame;
                         fps_cap_counter++;
                         detection_data.frame_id = frame_id++;
                         if (detection_data.cap_frame.empty() || exit_flag) {
@@ -284,7 +237,7 @@ int main(int argc, char *argv[])
                 });
 
 
-                // pre-processing video frame (resize, convertion)
+                // pre-processing video frame (resize, conversion)
                 t_prepare = std::thread([&]()
                 {
                     std::shared_ptr<image_t> det_image;
@@ -307,6 +260,8 @@ int main(int argc, char *argv[])
                 {
                     std::shared_ptr<image_t> det_image;
                     detection_data_t detection_data;
+
+                    std::ofstream out_detections(filename + ".det");
                     do {
                         detection_data = prepare2detect.receive();
                         det_image = detection_data.det_image;
@@ -317,10 +272,17 @@ int main(int argc, char *argv[])
                         fps_det_counter++;
                         //std::this_thread::sleep_for(std::chrono::milliseconds(150));
 
+                        for (const auto &b : result_vec)
+                            if (obj_names[b.obj_id] == "person" )
+                                out_detections << detection_data.frame_id << ";"
+                                               << b.x + b.w / 2 << ";" << b.y + b.h / 2 << ";"
+                                               << b.w << ";" << b.h << std::endl;
+
                         detection_data.new_detection = true;
                         detection_data.result_vec = result_vec;
                         detect2draw.send(detection_data);
                     } while (!detection_data.exit_flag);
+                    out_detections.close();
                     std::cout << " t_detect exit \n";
                 });
 
@@ -356,22 +318,6 @@ int main(int argc, char *argv[])
                         cv::Mat draw_frame = detection_data.cap_frame.clone();
                         std::vector<bbox_t> result_vec = detection_data.result_vec;
 
-#ifdef TRACK_OPTFLOW
-                        if (detection_data.new_detection) {
-                            tracker_flow.update_tracking_flow(detection_data.cap_frame, detection_data.result_vec);
-                            while (track_optflow_queue.size() > 0) {
-                                draw_frame = track_optflow_queue.back();
-                                result_vec = tracker_flow.tracking_flow(track_optflow_queue.front(), false);
-                                track_optflow_queue.pop();
-                            }
-                        }
-                        else {
-                            track_optflow_queue.push(cap_frame);
-                            result_vec = tracker_flow.tracking_flow(cap_frame, false);
-                        }
-                        detection_data.new_detection = true;    // to correct kalman filter
-#endif //TRACK_OPTFLOW
-
                         // track ID by using kalman filter
                         if (use_kalman_filter) {
                             if (detection_data.new_detection) {
@@ -387,16 +333,7 @@ int main(int argc, char *argv[])
                             result_vec = detector.tracking_id(result_vec, true, frame_story, 40);
                         }
 
-                        if (use_zed_camera && !detection_data.zed_cloud.empty()) {
-                            result_vec = get_3d_coordinates(result_vec, detection_data.zed_cloud);
-                        }
-
-                        //small_preview.set(draw_frame, result_vec);
-                        //large_preview.set(draw_frame, result_vec);
                         draw_boxes(draw_frame, result_vec, obj_names, current_fps_det, current_fps_cap);
-                        //show_console_result(result_vec, obj_names, detection_data.frame_id);
-                        //large_preview.draw(draw_frame);
-                        //small_preview.draw(draw_frame, true);
 
                         detection_data.result_vec = result_vec;
                         detection_data.draw_frame = draw_frame;
@@ -425,22 +362,6 @@ int main(int argc, char *argv[])
                     std::cout << " t_write exit \n";
                 });
 
-                // send detection to the network
-                t_network = std::thread([&]()
-                {
-                    if (send_network) {
-                        detection_data_t detection_data;
-                        do {
-                            detection_data = draw2net.receive();
-
-                            detector.send_json_http(detection_data.result_vec, obj_names, detection_data.frame_id, filename);
-
-                        } while (!detection_data.exit_flag);
-                    }
-                    std::cout << " t_network exit \n";
-                });
-
-
                 // show detection
                 detection_data_t detection_data;
                 do {
@@ -457,10 +378,6 @@ int main(int argc, char *argv[])
 
                     detection_data = draw2show.receive();
                     cv::Mat draw_frame = detection_data.draw_frame;
-
-                    //if (extrapolate_flag) {
-                    //    cv::putText(draw_frame, "extrapolate", cv::Point2f(10, 40), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.0, cv::Scalar(50, 50, 0), 2);
-                    //}
 
                     cv::imshow("window name", draw_frame);
                     int key = cv::waitKey(3);    // 3 or 16ms
@@ -483,51 +400,10 @@ int main(int argc, char *argv[])
                 if (t_write.joinable()) t_write.join();
                 if (t_network.joinable()) t_network.join();
 
-                break;
-
             }
-            else if (file_ext == "txt") {    // list of image files
-                std::ifstream file(filename);
-                if (!file.is_open()) std::cout << "File not found! \n";
-                else
-                    for (std::string line; file >> line;) {
-                        std::cout << line << std::endl;
-                        cv::Mat mat_img = cv::imread(line);
-                        std::vector<bbox_t> result_vec = detector.detect(mat_img);
-                        show_console_result(result_vec, obj_names);
-                        //draw_boxes(mat_img, result_vec, obj_names);
-                        //cv::imwrite("res_" + line, mat_img);
-                    }
-
-            }
-            else {    // image file
-                cv::Mat mat_img = cv::imread(filename);
-
-                auto start = std::chrono::steady_clock::now();
-                std::vector<bbox_t> result_vec = detector.detect(mat_img);
-                auto end = std::chrono::steady_clock::now();
-                std::chrono::duration<double> spent = end - start;
-                std::cout << " Time: " << spent.count() << " sec \n";
-
-                //result_vec = detector.tracking_id(result_vec);    // comment it - if track_id is not required
-                draw_boxes(mat_img, result_vec, obj_names);
-                cv::imshow("window name", mat_img);
-                show_console_result(result_vec, obj_names);
-                cv::waitKey(0);
-            }
-#else   // OPENCV
-            //std::vector<bbox_t> result_vec = detector.detect(filename);
-
-            auto img = detector.load_image(filename);
-            std::vector<bbox_t> result_vec = detector.detect(img);
-            detector.free_image(img);
-            show_console_result(result_vec, obj_names);
-#endif  // OPENCV
         }
         catch (std::exception &e) { std::cerr << "exception: " << e.what() << "\n"; getchar(); }
         catch (...) { std::cerr << "unknown exception \n"; getchar(); }
-        filename.clear();
-    }
 
     return 0;
 }
