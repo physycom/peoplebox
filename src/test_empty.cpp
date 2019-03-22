@@ -36,7 +36,7 @@ std::vector<bbox_t> get_3d_coordinates(std::vector<bbox_t> bbox_vect, cv::Mat xy
 #endif    // CV_VERSION_EPOCH
 
 void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std::string> obj_names,
-                int current_det_fps = -1, int current_cap_fps = -1)
+                const int &frame_num, int current_det_fps = -1, int current_cap_fps = -1)
 {
     int const colors[6][3] = {{1, 0, 1}, {0, 0, 1}, {0, 1, 1}, {0, 1, 0}, {1, 1, 0}, {1, 0, 0}};
 
@@ -70,7 +70,7 @@ void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std
     }
     if (current_det_fps >= 0 && current_cap_fps >= 0)
     {
-        std::string fps_str = "FPS detection: " + std::to_string(current_det_fps) + "   FPS capture: " + std::to_string(current_cap_fps);
+        std::string fps_str = "FRAME " + std::to_string(frame_num) + "   FPS detection: " + std::to_string(current_det_fps) + "   FPS capture: " + std::to_string(current_cap_fps);
         putText(mat_img, fps_str, cv::Point2f(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(50, 255, 0), 2);
     }
 }
@@ -333,7 +333,7 @@ int main(int argc, char *argv[])
                             result_vec = detector.tracking_id(result_vec, true, frame_story, 40);
                         }
 
-                        draw_boxes(draw_frame, result_vec, obj_names, current_fps_det, current_fps_cap);
+                        draw_boxes(draw_frame, result_vec, obj_names, detection_data.frame_id, current_fps_det, current_fps_cap);
 
                         detection_data.result_vec = result_vec;
                         detection_data.draw_frame = draw_frame;
