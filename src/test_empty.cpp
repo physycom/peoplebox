@@ -150,10 +150,10 @@ int main(int argc, char *argv[])
 
     auto obj_names = objects_names_from_file(names_file);
     bool const save_output_videofile = true;   // true - for history
-    bool const send_network = false;        // true - for remote detection
-    bool const use_kalman_filter = false;   // true - for stationary camera
+    bool const send_network = false;           // true - for remote detection
+    bool const use_kalman_filter = false;      // true - for stationary camera
 
-    bool detection_sync = true;             // true - for video-file
+    bool detection_sync = true;                // true - for video-file
 
     std::vector<std::vector<bbox_t>> tracks;
 

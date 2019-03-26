@@ -11,3 +11,8 @@ author: "Curti, Fabbri, Sinigardi"
 </a>
 
 [![Build Status](https://travis-ci.org/physycom/peoplebox.svg?branch=master)](https://travis-ci.org/physycom/peoplebox)
+
+
+# COMMAND LINE EXAMPLES
+
+$ .\test_empty.exe .\darknet\cfg\coco.names .\darknet\cfg\yolov3.cfg .\yolov3.weights path/to/video
