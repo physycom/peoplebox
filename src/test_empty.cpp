@@ -35,6 +35,8 @@ std::vector<bbox_t> get_3d_coordinates(std::vector<bbox_t> bbox_vect, cv::Mat xy
 #endif    // USE_CMAKE_LIBS
 #endif    // CV_VERSION_EPOCH
 
+#include <kalman.hpp>
+
 void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std::string> obj_names,
                 const int &frame_num, int current_det_fps = -1, int current_cap_fps = -1)
 {
@@ -209,7 +211,7 @@ int main(int argc, char *argv[])
                 send_one_replaceable_object_t<detection_data_t> cap2prepare(sync), cap2draw(sync),
                     prepare2detect(sync), detect2draw(sync), draw2show(sync), draw2write(sync), draw2net(sync);
 
-                std::thread t_cap, t_prepare, t_detect, t_post, t_draw, t_write, t_network;
+                std::thread t_cap, t_prepare, t_detect, t_post, t_draw, t_write;
 
                 // capture new video-frame
                 if (t_cap.joinable()) t_cap.join();
@@ -398,7 +400,6 @@ int main(int argc, char *argv[])
                 if (t_post.joinable()) t_post.join();
                 if (t_draw.joinable()) t_draw.join();
                 if (t_write.joinable()) t_write.join();
-                if (t_network.joinable()) t_network.join();
 
             }
         }
