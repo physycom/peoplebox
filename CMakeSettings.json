@@ -21,7 +21,8 @@
       "configurationType": "Debug",
       "generator": "Visual Studio 15 2017 Win64",
       "name": "x64-Debug static",
-      "variables": [{
+      "variables": [
+        {
           "name": "CMAKE_TOOLCHAIN_FILE",
           "value": "${env.VCPKG_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
         },
@@ -34,14 +35,16 @@
           "value": "${env.VCPKG_DEFAULT_TRIPLET}"
         }
       ]
-    }, {
+    },
+    {
       "buildCommandArgs": "-m -v:minimal",
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
       "cmakeCommandArgs": "",
       "configurationType": "Release",
       "generator": "Visual Studio 15 2017 Win64",
       "name": "x64-Release static",
-      "variables": [{
+      "variables": [
+        {
           "name": "CMAKE_TOOLCHAIN_FILE",
           "value": "${env.VCPKG_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
         },
@@ -51,17 +54,20 @@
         },
         {
           "name": "VCPKG_TARGET_TRIPLET",
-          "value": "${env.VCPKG_DEFAULT_TRIPLET}"
+          "value": "x64-windows"
+          //"value": "${env.VCPKG_DEFAULT_TRIPLET}"
         }
       ]
-    }, {
+    },
+    {
       "buildCommandArgs": "-m -v:minimal",
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
       "cmakeCommandArgs": "",
       "configurationType": "Debug",
       "generator": "Visual Studio 15 2017 Win64",
       "name": "x64-Debug static w/ CUDA",
-      "variables": [{
+      "variables": [
+        {
           "name": "CMAKE_TOOLCHAIN_FILE",
           "value": "${env.VCPKG_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
         },
@@ -78,7 +84,8 @@
           "value": "${env.VCPKG_DEFAULT_TRIPLET}"
         }
       ]
-    }, {
+    }, 
+    {
       "buildCommandArgs": "-m -v:minimal",
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
       "cmakeCommandArgs": "",
@@ -110,7 +117,8 @@
       "configurationType": "Debug",
       "generator": "Visual Studio 15 2017 Win64",
       "name": "x64-Debug dynamic",
-      "variables": [{
+      "variables": [
+        {
           "name": "CMAKE_TOOLCHAIN_FILE",
           "value": "${env.VCPKG_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
         },
@@ -127,14 +135,16 @@
           "value": "${env.VCPKG_DEFAULT_TRIPLET}"
         }
       ]
-    }, {
+    },
+    {
       "buildCommandArgs": "-m -v:minimal",
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
       "cmakeCommandArgs": "",
       "configurationType": "Release",
       "generator": "Visual Studio 15 2017 Win64",
       "name": "x64-Release dynamic",
-      "variables": [{
+      "variables": [
+        {
           "name": "CMAKE_TOOLCHAIN_FILE",
           "value": "${env.VCPKG_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
         },
@@ -151,14 +161,16 @@
           "value": "${env.VCPKG_DEFAULT_TRIPLET}"
         }
       ]
-    }, {
+    },
+    {
       "buildCommandArgs": "-m -v:minimal",
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
       "cmakeCommandArgs": "",
       "configurationType": "Debug",
       "generator": "Visual Studio 15 2017 Win64",
       "name": "x64-Debug dynamic w/ CUDA",
-      "variables": [{
+      "variables": [
+        {
           "name": "CMAKE_TOOLCHAIN_FILE",
           "value": "${env.VCPKG_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
         },
@@ -179,7 +191,8 @@
           "value": "${env.VCPKG_DEFAULT_TRIPLET}"
         }
       ]
-    }, {
+    }, 
+    {
       "buildCommandArgs": "-m -v:minimal",
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
       "cmakeCommandArgs": "",

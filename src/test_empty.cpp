@@ -7,10 +7,10 @@
 #include <thread>
 #include <future>
 #include <atomic>
-#include <mutex>         // std::mutex, std::unique_lock
+#include <mutex>
 #include <cmath>
 
-#include "yolo_v2_class.hpp"    // imported functions from DLL
+#include <yolo_v2_class.hpp>
 
 #ifdef OPENCV
 
@@ -36,6 +36,7 @@ std::vector<bbox_t> get_3d_coordinates(std::vector<bbox_t> bbox_vect, cv::Mat xy
 #endif    // CV_VERSION_EPOCH
 
 #include <kalman.hpp>
+#include <almost_sort.hpp>
 
 void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std::string> obj_names,
                 const int &frame_num, int current_det_fps = -1, int current_cap_fps = -1)
@@ -76,6 +77,27 @@ void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std
         putText(mat_img, fps_str, cv::Point2f(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(50, 255, 0), 2);
     }
 }
+
+void draw_track(cv::Mat mat_img, const tracker_t &tracker)
+{
+  for (const auto &t : tracker.tracks)
+  {
+    for (int i = 0; i< int(t.detection.size() - 1); ++i)
+    {
+      if (i == 0)
+      {
+        putText(mat_img, std::to_string(t.track_id), 
+          cv::Point(t.detection[i].x + t.detection[i].w * 0.5, t.detection[i].y + t.detection[i].h * 0.5), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0,0,0), 2);
+      }
+      cv::arrowedLine(mat_img,
+        cv::Point(t.detection[i].x + t.detection[i].w * 0.5, t.detection[i].y + t.detection[i].h * 0.5),
+        cv::Point(t.detection[i + 1].x + t.detection[i + 1].w * 0.5, t.detection[i + 1].y + t.detection[i + 1].h * 0.5),
+        obj_id_to_color(t.track_id % 6),
+        5);
+    }
+  }
+}
+
 #endif    // OPENCV
 
 
@@ -156,8 +178,10 @@ int main(int argc, char *argv[])
     bool const use_kalman_filter = false;      // true - for stationary camera
 
     bool detection_sync = true;                // true - for video-file
-
-    std::vector<std::vector<bbox_t>> tracks;
+    
+    int frame_story = 10;
+    int max_dist_px = 60;
+    tracker_t tracker(frame_story, max_dist_px);
 
     try
     {
@@ -291,7 +315,7 @@ int main(int argc, char *argv[])
                 // draw rectangles (and track objects)
                 t_draw = std::thread([&]()
                 {
-                    std::queue<cv::Mat> track_optflow_queue;
+//                    std::queue<cv::Mat> track_optflow_queue;
                     detection_data_t detection_data;
                     do {
 
@@ -320,22 +344,31 @@ int main(int argc, char *argv[])
                         cv::Mat draw_frame = detection_data.cap_frame.clone();
                         std::vector<bbox_t> result_vec = detection_data.result_vec;
 
-                        // track ID by using kalman filter
-                        if (use_kalman_filter) {
-                            if (detection_data.new_detection) {
-                                result_vec = track_kalman.correct(result_vec);
-                            }
-                            else {
-                                result_vec = track_kalman.predict();
-                            }
-                        }
-                        // track ID by using custom function
-                        else {
-                            int frame_story = std::max(5, current_fps_cap.load());
-                            result_vec = detector.tracking_id(result_vec, true, frame_story, 40);
-                        }
+                        // tracking
+                        tracker.update(result_vec);
+                        std::cout << "Frame " << detection_data.frame_id << "  Tracks " << tracker.tracks.size() << "  Det " << result_vec.size() << std::endl;
+
+                        //// track ID by using kalman filter
+                        //if (use_kalman_filter) {
+                        //    if (detection_data.new_detection) {
+                        //        result_vec = track_kalman.correct(result_vec);
+                        //    }
+                        //    else {
+                        //        result_vec = track_kalman.predict();
+                        //    }
+                        //}
+                        //// track ID by using custom function
+                        //else {
+                        //    int frame_story = std::max(5, current_fps_cap.load());
+                        //    result_vec = detector.tracking_id(result_vec, true, frame_story, 40);
+                        //}
 
                         draw_boxes(draw_frame, result_vec, obj_names, detection_data.frame_id, current_fps_det, current_fps_cap);
+                        draw_track(draw_frame, tracker);
+
+                        std::stringstream ss;
+                        ss << std::setw(6) << std::setfill('0') << detection_data.frame_id;
+                        cv::imwrite(filename + ss.str() + ".arrow.jpg", draw_frame);
 
                         detection_data.result_vec = result_vec;
                         detection_data.draw_frame = draw_frame;
