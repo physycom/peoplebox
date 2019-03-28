@@ -169,7 +169,7 @@ void usage(char * progname)
     "thresh"       : 0.2
   },
   "opencv_show" : "false",
-  "input"       : "video.avi"
+  "filename"    : "video.avi"
 }
 )";
 }
