@@ -44,7 +44,7 @@ struct track_t
     this->n_init = default_n_init;
   }
 
-  void track_t::update(const bbox_t &det)
+  void update(const bbox_t &det)
   {
     //kf to add here
     this->hits++;
@@ -54,12 +54,11 @@ struct track_t
     this->detection.push_back(det);
   }
 
-  void track_t::mark_missed()
+  void mark_missed()
   {
     if (this->state == track_state::TENTATIVE ) this->state = track_state::DELETED; 
     else if (this->time_since_update > this->max_age) this->state = track_state::DELETED;
   }
-
 };
 
 ////////// TRACKER
