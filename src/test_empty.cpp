@@ -39,6 +39,7 @@ std::vector<bbox_t> get_3d_coordinates(std::vector<bbox_t> bbox_vect, cv::Mat xy
 
 #include <kalman.hpp>
 #include <almost_sort.hpp>
+#include <barrier.hpp>
 
 void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std::string> obj_names,
   const int &frame_num, int current_det_fps = -1, int current_cap_fps = -1)
@@ -99,6 +100,22 @@ void draw_track(cv::Mat mat_img, const tracker_t &tracker)
     }
   }
 }
+
+void draw_barrier(cv::Mat mat_img, const std::vector<barrier> &barriers)
+{
+  for (const auto &b : barriers)
+  {
+    putText(mat_img, b.name,
+      cv::Point(b.x1, b.y1), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0, 0, 0), 2);
+
+    cv::arrowedLine(mat_img,
+      cv::Point(b.x1, b.y1),
+      cv::Point(b.x2, b.y2),
+      cv::Scalar(0, 0, 0),
+      2);
+  }
+}
+
 
 #endif    // OPENCV
 
@@ -162,11 +179,17 @@ void usage(char * progname)
   std::cerr << "Usage: " << pname.substr(pname.find_last_of("/\\") + 1) << " path/to/json/config" << std::endl;
   std::cerr << R"(Sample config JSON file
 {
-  "network": {
+  "network" : {
     "file_names"   : "darknet/data/coco.names",
     "file_cfg"     : "darknet/cfg/yolov3.cfg",
     "file_weights" : "darknet/yolov3.weights",
     "thresh"       : 0.2
+  },
+  "barriers" : {
+    "test_barrier" : {
+      "pnt_start" : [100, 100],
+      "pnt_end"   : [900, 900]
+    }
   },
   "opencv_show" : "false",
   "filename"    : "video.avi"
@@ -190,6 +213,7 @@ int main(int argc, char *argv[])
   std::string names_file, cfg_file, weights_file, filename;
   float thresh;
   bool openvc_show;
+  std::vector<barrier> barriers;
 
   try
   {
@@ -203,6 +227,16 @@ int main(int argc, char *argv[])
     thresh =       (jconf["network"].has_member("thresh"))       ? jconf["network"]["thresh"].as<float>()             : 0.2f;
     openvc_show =  (jconf.has_member("opencv_show"))             ? jconf["opencv_show"].as<bool>()                    : false;
     filename =     (jconf.has_member("filename"))                ? jconf["filename"].as<std::string>()                : "";
+
+    if (jconf.has_member("barriers"))
+    {
+      for (const auto &b : jconf["barriers"].object_range())
+      {
+        barriers.emplace_back( std::string(b.key()),
+          b.value()["pnt_start"][0].as<int>(), b.value()["pnt_start"][1].as<int>(), 
+          b.value()["pnt_end"][0].as<int>(), b.value()["pnt_end"][1].as<int>() );
+      }
+    }
   }
   catch (std::exception &e)
   {
@@ -250,7 +284,7 @@ int main(int argc, char *argv[])
       video_fps = cap.get(CV_CAP_PROP_FPS);
       cap >> cur_frame;
       cv::Size const frame_size = cur_frame.size();
-      std::cout << "\n Video size: " << frame_size << std::endl;
+      std::cout << "\n Video size: " << frame_size << "  FPS: " << video_fps << std::endl;
 
       cv::VideoWriter output_video;
       std::string out_videofile = filename + ".track.avi";
@@ -385,8 +419,27 @@ int main(int argc, char *argv[])
           tracker.update(result_vec);
           std::cout << "Frame " << detection_data.frame_id << "  Tracks " << tracker.tracks.size() << "  Det " << result_vec.size() << std::endl;
 
+          if (detection_data.frame_id % video_fps == 0)
+          {
+            for (auto &b : barriers)
+            {
+              for (const auto &t : tracker.tracks)
+              {
+                b.crossing(t);
+              }
+
+              std::cout << "CROSSING  Frame " << detection_data.frame_id << "  IN " << b.cnt_in << "  OUT " << b.cnt_out << std::endl;
+
+              b.reset();
+            }
+
+            tracker.tracks.clear();
+          }
+
+          // decorate img
           draw_boxes(draw_frame, result_vec, obj_names, detection_data.frame_id, current_fps_det, current_fps_cap);
           draw_track(draw_frame, tracker);
+          draw_barrier(draw_frame, barriers);
 
           std::stringstream ss;
           ss << std::setw(6) << std::setfill('0') << detection_data.frame_id;
@@ -436,7 +489,11 @@ int main(int argc, char *argv[])
         cv::Mat draw_frame = detection_data.draw_frame;
 
         if (openvc_show) {
-          cv::imshow("Tracking", draw_frame);
+          cv::Mat small_frame;
+          cv::resize(draw_frame, small_frame, cv::Size(), 0.5, 0.5);
+          cv::imshow("Tracking small frame", small_frame);
+
+          //cv::imshow("Tracking", draw_frame);
           int key = cv::waitKey(3);    // 3 or 16ms
           if (key == 'f') show_small_boxes = !show_small_boxes;
           if (key == 'p') while (true) if (cv::waitKey(100) == 'p') break;
