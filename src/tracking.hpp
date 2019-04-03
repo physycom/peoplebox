@@ -13,14 +13,13 @@
 ////////// TRACK STATE
 typedef enum
 {
-  TENTATIVE,
-  DELETED,
-  CONFIRMED
+  CONFIRMED = 0,
+  DELETED   = 1,
+  TENTATIVE = 2,
 } track_state;
 
 ////////// TRACK 
-
-constexpr int default_max_age = 30;
+constexpr int default_max_age = 90;
 constexpr int default_n_init = 1;
 
 struct track_t
@@ -56,24 +55,40 @@ struct track_t
 
   void mark_missed()
   {
-    if (this->state == track_state::TENTATIVE ) this->state = track_state::DELETED; 
-    else if (this->time_since_update > this->max_age) this->state = track_state::DELETED;
+//    std::cout << "dentro " << track_id << " " << state << std::endl;
+    if (this->state == track_state::TENTATIVE || this->time_since_update > this->max_age) 
+    {
+//      std::cout << "puzzammerda " << this->max_age << std::endl;
+      this->state = track_state::DELETED;
+    }
   }
 };
 
 ////////// TRACKER
-
 class tracker_t
 {
 public:
   int frames_story, max_dist_px;
   std::vector<track_t> tracks;
+  std::vector<std::pair<int, int>> matches_l;
+  std::vector<int> unmatched_track_l;
 
   tracker_t(const int &frames_story, const int &max_dist_px) : frames_story(frames_story), max_dist_px(max_dist_px), n_trackid(0) {}
 
+  void reset()
+  {
+    tracks.clear();
+    n_trackid = 0;
+  }
+
   void match(const std::vector<int> &track_indices_l, const std::vector<bbox_t> &detect, const std::vector<int> &detect_indices)
   {
-    if (track_indices_l.size() == 0 || detect_indices.size() == 0) return; //nothing to match
+    if (track_indices_l.size() == 0 || detect_indices.size() == 0) //nothing to match
+    {
+      unmatched_det = detect_indices;
+      unmatched_track_l = track_indices_l;
+      return;
+    }
 
     int Ntrack = track_indices_l.size();
     int Ndet = detect_indices.size();
@@ -83,15 +98,20 @@ public:
     Hungarian::Matrix cost(Ntrack, std::vector<int>(Ndet, 0));
     for (int i=0; i < Ntrack; ++i)
     {
-      for (int j = 0; j < Ndet; ++j)
+      for (int j=0; j < Ndet; ++j)
       {
         int ii = track_indices_l[i];
         int jj = detect_indices[j];
         float dx = (float)((tracks[ii].detection.back().x + tracks[ii].detection.back().w * 0.5) - (float)(detect[jj].x + detect[jj].w * 0.5));
         float dy = (float)((tracks[ii].detection.back().y + tracks[ii].detection.back().h * 0.5) - (float)(detect[jj].y + detect[jj].h * 0.5));
         cost[i][j] = int(std::sqrt(dx*dx + dy*dy));
+ 
+//        std::cout << i << " " << j << " " << ii << " " << jj << " | " << dx << " " << dy << " " << cost[i][j] << std::endl; 
+//        std::cout << tracks[ii].detection.back().x + tracks[ii].detection.back().w * 0.5 << " " << detect[jj].x + detect[jj].w * 0.5 << std::endl; 
+//        std::cout << tracks[ii].detection.back().x << " " << detect[jj].x << std::endl; 
       }
     }
+//    Hungarian::PrintMatrix(cost);
 
     // this should become a class member
     // improve hungarian encapsulation and naming
@@ -109,12 +129,12 @@ public:
         if (min.assignment[i][j] == 1) 
         {
           if (i >= Ntrack) unmatched_det.push_back(detect_indices[j]);
-          else if (j >= Ndet) unmatched_track.push_back(track_indices_l[i]);
+          else if (j >= Ndet) unmatched_track_l.push_back(track_indices_l[i]);
           else if (cost[i][j] > max_dist_px) {
             unmatched_det.push_back(detect_indices[j]);
-            unmatched_track.push_back(track_indices_l[i]);
+            unmatched_track_l.push_back(track_indices_l[i]);
           }
-          else matches.push_back(std::make_pair(track_indices_l[i], detect_indices[j]));
+          else matches_l.push_back(std::make_pair(track_indices_l[i], detect_indices[j]));
         }
       }
     }
@@ -144,6 +164,7 @@ public:
     tracking(detection, all_track_indices);
 //    tracking(detection, confirmed_tracks);
 //    tracking(detection, unconfirmed_tracks);
+//    for(const auto &p : matches) std::cout << p.first << " --> " << p.second << std::endl;
 
     for (const auto &p : matches)         tracks[p.first].update(detection[p.second]);
     for (const auto &i : unmatched_track) tracks[i].mark_missed();
@@ -166,31 +187,37 @@ public:
 
     for (int level = 0; level < frames_story; ++level)
     {
-      if (unmatched_det.size() == 0) break; //no detection left
+      unmatched_track_l.clear();
+      matches_l.clear();
+
+      if (unmatched_det.size() == 0) break; // no detection left
 
       std::vector<int> track_indices_level;
       for (int i = 0; i < track_indices.size(); ++i)
         if (tracks[i].time_since_update == level + 1)
-          track_indices_level.push_back(i);
+          track_indices_level.push_back(track_indices[i]);
 
       if (track_indices_level.size() == 0) continue; // no match at this level
 
       // update unmatched detection index proxy
-      detect_indices.resize(unmatched_det.size());
-      std::iota(detect_indices.begin(), detect_indices.end(), 0);
+      detect_indices = unmatched_det;
 
-      std::vector<std::pair<int, int>> matches_l;
-      std::vector<int> unmatched_track_l;
-
-     // std::cout << "Level " << level << std::endl;
+//      std::cout << "Level " << level << std::endl;
       match(track_indices_level, detection, detect_indices);
       matches.insert(matches.end(), matches_l.begin(), matches_l.end());
+//      std::cout << "matches_l: " << matches_l.size() << std::endl;
+//      std::cout << "unmatched_track_l: " << unmatched_track_l.size() << std::endl;
+//      std::cout << "unmatched_det (" << unmatched_det.size() << ") ";
+//      for(const auto &i : unmatched_det) std::cout << i << " ";
+//      std::cout << std::endl;
+
+      //for(const auto &p : matches) std::cout << p.first << " --> " << p.second << std::endl;
     }
 
     for (auto &i : track_indices) {
       bool track_present = false;
       for (auto &j : matches)
-        if (j.second == i) {
+        if (j.first == i) {
           track_present = true;
           break;
         }

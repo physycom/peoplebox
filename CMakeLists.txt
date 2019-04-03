@@ -17,46 +17,39 @@ foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES} )
     set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_SOURCE_DIR}/bin )
 endforeach( OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES )
 
-#if(EXISTS "$ENV{WORKSPACE}/sysconfig/cmake/physycom_config.cmake")
-#   message(STATUS "Enabling physycom settings")
-#   include("$ENV{WORKSPACE}/sysconfig/cmake/physycom_config.cmake")
-#else()
-#   message(STATUS "Unable to find physycom settings file")
-#endif()
-
 #darknet deps
 include(darknet/CMakeLists.txt)
 
-if(CUDA_FOUND)
-  list(APPEND linked_libs ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_curand_LIBRARY})
-endif()
+#if(CUDA_FOUND)
+#  list(APPEND linked_libs ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_curand_LIBRARY})
+#endif()
+#
+#if(CUDNN_FOUND)
+#  list(APPEND linked_libs ${CUDNN_LIBRARY})
+#endif()
 
-if(CUDNN_FOUND)
-  list(APPEND linked_libs ${CUDNN_LIBRARY})
-endif()
-
-if(OPENMP_FOUND AND APPLE)
-  list(APPEND linked_libs OpenMP::OpenMP_C)
-endif()
+#if(OPENMP_FOUND AND APPLE)
+#  list(APPEND linked_libs OpenMP::OpenMP_C)
+#endif()
 
 if(CMAKE_COMPILER_IS_GNUCC)
   list(APPEND linked_libs m)
 endif()
 
 if(MSVC)
-  list(APPEND linked_libs ${PTHREADS_LIBRARIES} wsock32 ws2_32)
+  list(APPEND linked_libs ${PTHREADS_LIBRARIES})
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/jsoncons/include ${CMAKE_SOURCE_DIR}/src ${OpenCV_INCLUDE_DIRS})
 
-# add new empty test
-add_executable(test_empty ${CMAKE_SOURCE_DIR}/src/test_empty.cpp)
-set_target_properties(test_empty PROPERTIES LINKER_LANGUAGE CXX)
-target_include_directories(test_empty PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/src> $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${Stb_INCLUDE_DIR}>)
+# apps
+add_executable(demo ${CMAKE_SOURCE_DIR}/src/demo.cpp)
+set_target_properties(demo PROPERTIES LINKER_LANGUAGE CXX)
+target_include_directories(demo PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/src> $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${Stb_INCLUDE_DIR}>)
 
 if(OpenCV_FOUND)
-target_link_libraries(test_empty PRIVATE ${OpenCV_LIBS})
+  target_link_libraries(demo PRIVATE ${OpenCV_LIBS})
 endif()
-target_link_libraries(test_empty PRIVATE darklib)
+target_link_libraries(demo PRIVATE darklib)
 
-install(TARGETS test_empty DESTINATION "${CMAKE_SOURCE_DIR}")
+install(TARGETS demo DESTINATION "${CMAKE_SOURCE_DIR}")

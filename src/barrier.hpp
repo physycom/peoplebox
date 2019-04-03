@@ -2,64 +2,81 @@
 struct barrier
 {
   std::string name;
-  int x1, x2, y1, y2, w, h;
-
-  // the line will be stored as
-  // ax + by + c = 0
-  bool s_start, s_end;
-  int a, b, c;
+  int x0, y0, x1, y1;
+  int bx, by;
   int cnt_in, cnt_out;
 
+  barrier() {}
 
-  int *zone;
-
-  barrier(const std::string &name, const int &x1, const int &y1, const int &x2, const int &y2 /*, const int &w, const int &h */)
-    //barrier(int x1, int y1, int x2, int y2, const int &w, const int &h)
-    : name(name), x1(x1), y1(y1), x2(x2), y2(y2),
-    cnt_in(0), cnt_out(0)
+  barrier(const std::string &name, const int &x0, const int &y0, const int &x1, const int &y1)
+    : name(name), x0(x0), y0(y0), x1(x1), y1(y1), cnt_in(0), cnt_out(0)
   {
-    //zone = new int[w*h];
-
-    if (y2 > y1)
-    {
-      a = y2 - y1;
-      b = x1 - x2;
-      c = -x1 * y2 + x2 * y1;
-    }
-    else
-    {
-      a = y1 - y2;
-      b = x2 - x1;
-      c = x1 * y2 - x2 * y1;
-    }
-
-    //    for(int i=0; i < w; ++i)
-    //    {
-    //      for(int j=0; j < h; ++j)
-    //      {
-    //
-    //      }
-    //    }
+    bx = x1 - x0;
+    by = y1 - y0;
   }
 
   template<typename track_t>
-  void crossing(const track_t &track)
+  int crossing(const track_t &track)
   {
-    int x = track.detection.front().x + int(track.detection.front().w * 0.5);
-    int y = track.detection.front().y + int(track.detection.front().h * 0.5);
-    s_start = (a*x + b * y + c > 0);
+    // track vector
+    int tx = track.detection.front().x + int(track.detection.front().w * 0.5) - (track.detection.back().x + int(track.detection.back().w * 0.5));
+    int ty = track.detection.front().y + int(track.detection.front().h * 0.5) - (track.detection.back().y + int(track.detection.back().h * 0.5));
 
-    x = track.detection.back().x + int(track.detection.back().w * 0.5);
-    y = track.detection.back().y + int(track.detection.back().h * 0.5);
-    s_end = (a*x + b * y + c > 0);
+    // relative vector
+    int ux = (track.detection.back().x + int(track.detection.back().w * 0.5)) - x0;
+    int uy = (track.detection.back().y + int(track.detection.back().h * 0.5)) - y0;
 
-    if (s_start != s_end)
+    // b x t
+    int cross = bx * ty  -  tx * by;
+    if ( !cross ) return 0; // b and t parallel
+    float inv_cross = 1. / cross;
+
+    // intersection point parameters
+    float s1 = (ux * by - bx * uy) * inv_cross;    // - vp . w / vp . u
+    float t1 = (ux * ty - tx * uy) * inv_cross;   // - vp . w / vp . u
+
+    if ( s1 > 0 && s1 < 1 && t1 > 0 && t1 < 1)    // segment-segment intersection condition
     {
-      if (s_start)
-        ++cnt_in;
-      else
-        ++cnt_out;
+      if( cross > 0 ) return 1;
+      else            return -1;
     }
+
+    return 0;
+  }
+
+  void reset()
+  {
+    cnt_in = 0;
+    cnt_out = 0;
+  }
+};
+
+struct fat_barrier
+{
+  std::string name;
+  barrier bp, bm;
+  int thickness;
+  int cnt_in, cnt_out;
+
+  fat_barrier(const std::string &name, const int &P0x, const int &P0y, const int &P1x, const int &P1y, const int &thickness)
+   : name(name), thickness(thickness), cnt_in(0), cnt_out(0)
+  {
+    float perpx = P0y - P1y;
+    float perpy = P1x - P0x;
+    float len = std::sqrt(perpx*perpx + perpy*perpy);
+    int offsx = int( (perpx / len) * thickness);
+    int offsy = int( (perpy / len) * thickness);
+
+    bp = barrier(name, P0x + offsx, P0y + offsy, P1x + offsx, P1y + offsy);
+    bm = barrier(name, P0x - offsx, P0y - offsy, P1x - offsx, P1y - offsy);
+  }
+
+  template<typename track_t>
+  void crossing(const track_t &track)  
+  {
+    int ret = bp.crossing(track) + bm.crossing(track);
+    if      ( ret > 0 ) ++cnt_in;
+    else if ( ret < 0 ) ++cnt_out;
   }
 
   void reset()

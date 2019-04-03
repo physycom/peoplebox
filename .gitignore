@@ -5,6 +5,7 @@
 *.png
 *.jpg
 *.pyc
+.fuse*
 old/
 mnist/
 data/
@@ -22,10 +23,6 @@ libdarknet.so
 libdarknet_lib.dylib
 darknet.lib
 darknet.dll
-darktrack
-save_frame
-save_stream
-.fuse*
 
 # OS Generated #
 .DS_Store*
@@ -33,10 +30,8 @@ ehthumbs.db
 Icon?
 Thumbs.db
 *.swp
-
 log.txt
 *.log
-
 build_*/
 bin/
 output/
@@ -46,5 +41,5 @@ output/
 *.exe
 *.avi
 
-# temp
-test_empty
+# Apps
+demo

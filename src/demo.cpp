@@ -9,6 +9,7 @@
 #include <atomic>
 #include <mutex>
 #include <cmath>
+#include <ctime>
 
 #include <jsoncons/json.hpp>
 
@@ -38,7 +39,7 @@ std::vector<bbox_t> get_3d_coordinates(std::vector<bbox_t> bbox_vect, cv::Mat xy
 #endif    // CV_VERSION_EPOCH
 
 #include <kalman.hpp>
-#include <almost_sort.hpp>
+#include <tracking.hpp>
 #include <barrier.hpp>
 
 void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std::string> obj_names,
@@ -106,16 +107,37 @@ void draw_barrier(cv::Mat mat_img, const std::vector<barrier> &barriers)
   for (const auto &b : barriers)
   {
     putText(mat_img, b.name,
-      cv::Point(b.x1, b.y1), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0, 0, 0), 2);
+      cv::Point(b.x0, b.y0), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0, 0, 0), 2);
 
     cv::arrowedLine(mat_img,
+      cv::Point(b.x0, b.y0),
       cv::Point(b.x1, b.y1),
-      cv::Point(b.x2, b.y2),
       cv::Scalar(0, 0, 0),
       2);
   }
 }
 
+void draw_barrier(cv::Mat mat_img, const std::vector<fat_barrier> &barriers)
+{
+  for (const auto &b : barriers)
+  {
+    putText(mat_img, b.name,
+      cv::Point((b.bp.x0 + b.bm.x0) * 0.5, (b.bp.y0 + b.bm.y0) * 0.5), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0, 0, 0), 2);
+
+    cv::arrowedLine(mat_img,
+      cv::Point(b.bp.x0, b.bp.y0),
+      cv::Point(b.bp.x1, b.bp.y1),
+      cv::Scalar(0, 0, 0),
+      2);
+    
+    cv::arrowedLine(mat_img,
+      cv::Point(b.bm.x0, b.bm.y0),
+      cv::Point(b.bm.x1, b.bm.y1),
+      cv::Scalar(0, 0, 0),
+      2);
+
+  }
+}
 
 #endif    // OPENCV
 
@@ -197,6 +219,8 @@ void usage(char * progname)
 )";
 }
 
+constexpr int SW_VER = 100;
+
 int main(int argc, char *argv[])
 {
   std::string conf;
@@ -213,7 +237,15 @@ int main(int argc, char *argv[])
   std::string names_file, cfg_file, weights_file, filename;
   float thresh;
   bool openvc_show;
-  std::vector<barrier> barriers;
+
+  // box vars
+  std::string id_box;
+
+  // barrier crossing vars
+  std::vector<fat_barrier> barriers;
+  int crossing_dt, crossing_frame_num, dump_dt, dump_rec_num;
+  jsoncons::json crossing;
+  bool enable_barrier = false;
 
   try
   {
@@ -234,9 +266,16 @@ int main(int argc, char *argv[])
       {
         barriers.emplace_back( std::string(b.key()),
           b.value()["pnt_start"][0].as<int>(), b.value()["pnt_start"][1].as<int>(), 
-          b.value()["pnt_end"][0].as<int>(), b.value()["pnt_end"][1].as<int>() );
+          b.value()["pnt_end"][0].as<int>(), b.value()["pnt_end"][1].as<int>(),
+          b.value()["thickness"].as<int>() );
       }
     }
+    enable_barrier = (jconf.has_member("enable_barrier")) ? jconf["enable_barrier"].as<bool>() : false;
+
+    id_box = (jconf.has_member("id_box")) ? jconf["id_box"].as<std::string>() : "unknown_box";
+    crossing_dt = (jconf.has_member("crossing_dt")) ? jconf["crossing_dt"].as<int>() : 1;
+    dump_dt =     (jconf.has_member("dump_dt"))     ? jconf["dump_dt"].as<int>()     : 5;
+    if ( crossing_dt > dump_dt ) dump_dt = crossing_dt;
   }
   catch (std::exception &e)
   {
@@ -245,15 +284,14 @@ int main(int argc, char *argv[])
   }
 
   Detector detector(cfg_file, weights_file);
-
   auto obj_names = objects_names_from_file(names_file);
-  bool const save_output_videofile = true;   // true - for history
-  bool const send_network = false;           // true - for remote detection
-  bool const use_kalman_filter = false;      // true - for stationary camera
-  bool detection_sync = true;                // true - for video-file
 
+  bool const save_output_videofile = true;   // true - for history
+  bool detection_sync = true;                // true - for video-file
+  
+  // tracking vars
   int frame_story = 10;
-  int max_dist_px = 60;
+  int max_dist_px = 120;
   tracker_t tracker(frame_story, max_dist_px);
 
   try
@@ -281,10 +319,13 @@ int main(int argc, char *argv[])
 
       cv::VideoCapture cap;
       cap.open(filename);
+      if( !cap.isOpened() ) throw std::runtime_error("Unable to open input video: " + filename);
       video_fps = cap.get(CV_CAP_PROP_FPS);
+      crossing_frame_num = video_fps * crossing_dt;
+      dump_rec_num =  int(dump_dt / float(crossing_dt));
       cap >> cur_frame;
       cv::Size const frame_size = cur_frame.size();
-      std::cout << "\n Video size: " << frame_size << "  FPS: " << video_fps << std::endl;
+      std::cout << "Video input: " << filename << "\nsize: " << frame_size << "  FPS: " << video_fps << std::endl;
 
       cv::VideoWriter output_video;
       std::string out_videofile = filename + ".track.avi";
@@ -373,7 +414,7 @@ int main(int argc, char *argv[])
           for (const auto &b : result_vec)
             if (obj_names[b.obj_id] == "person")
               out_detections << detection_data.frame_id << ";"
-              << b.x + b.w / 2 << ";" << b.y + b.h / 2 << ";"
+              << b.x << ";" << b.y << ";"
               << b.w << ";" << b.h << std::endl;
 
           detection_data.new_detection = true;
@@ -417,23 +458,63 @@ int main(int argc, char *argv[])
 
           // tracking
           tracker.update(result_vec);
-          std::cout << "Frame " << detection_data.frame_id << "  Tracks " << tracker.tracks.size() << "  Det " << result_vec.size() << std::endl;
+          //std::cout << "Frame " << detection_data.frame_id << "  Tracks " << tracker.tracks.size() << "  Det " << result_vec.size() << std::endl;
+          //for(const auto &t : tracker.tracks ) std::cout << t.track_id << " " << t.time_since_update << " " << t.state << std::endl;
+          //std::cout << "----------------------------------------------------" << std::endl << std::endl;
 
-          if (detection_data.frame_id % video_fps == 0)
+          // barrier crossing
+          if ( enable_barrier && (detection_data.frame_id % crossing_frame_num == 0) )
           {
+            std::cout << "CROSSING Frame " << detection_data.frame_id << std::endl;
             for (auto &b : barriers)
             {
               for (const auto &t : tracker.tracks)
               {
                 b.crossing(t);
               }
+              //std::cout << "CROSSING " << b.name << "  Frame " << detection_data.frame_id << "  IN " << b.cnt_in << "  OUT " << b.cnt_out << std::endl;
+            }
 
-              std::cout << "CROSSING  Frame " << detection_data.frame_id << "  IN " << b.cnt_in << "  OUT " << b.cnt_out << std::endl;
+            jsoncons::json jrecord;
+            auto tnow = std::time(0);
+            jrecord["timestamp"] = tnow;
+            jrecord["id_box"] = id_box;
+            jrecord["detection"] = "counting";
+            jrecord["sw_ver"] = SW_VER;
+
+            // collect multi-barrier results
+            jsoncons::json pplc = jsoncons::json::array();
+            jsoncons::json j;
+            for (auto &b : barriers)
+            {
+              j["id"] = b.name + "-in";
+              j["count"] = b.cnt_in;
+              pplc.push_back(j);
+              j["id"] = b.name + "-out";
+              j["count"] = b.cnt_out;
+              pplc.push_back(j);
 
               b.reset();
             }
+            jrecord["people_count"] = pplc;
+            jrecord["diagnostic"] = jsoncons::json::parse(R"([{"id" : "coming", "value" : "soon"}])");
 
-            tracker.tracks.clear();
+            std::stringstream ss;
+            ss << "frame_" << std::setw(6) << std::setfill('0') << detection_data.frame_id;
+            crossing[ss.str()] = jrecord;
+
+            if ( crossing.size() >= dump_rec_num )
+            {
+              //std::cout << "Dumpo" << std::endl; 
+              std::ofstream pplc_out("data/" + id_box + "_" + std::to_string(tnow) + ".json");
+              if( !pplc_out ) throw std::runtime_error("Unable to create dump file.");
+              pplc_out << jsoncons::pretty_print(crossing) << std::endl;
+              pplc_out.close();
+              crossing.clear();
+            }
+
+            // clean up tracks
+            tracker.reset();
           }
 
           // decorate img
@@ -448,7 +529,6 @@ int main(int argc, char *argv[])
           detection_data.result_vec = result_vec;
           detection_data.draw_frame = draw_frame;
           draw2show.send(detection_data);
-          if (send_network) draw2net.send(detection_data);
           if (output_video.isOpened()) draw2write.send(detection_data);
         } while (!detection_data.exit_flag);
         std::cout << " t_draw exit" << std::endl;
@@ -491,7 +571,7 @@ int main(int argc, char *argv[])
         if (openvc_show) {
           cv::Mat small_frame;
           cv::resize(draw_frame, small_frame, cv::Size(), 0.5, 0.5);
-          cv::imshow("Tracking small frame", small_frame);
+          cv::imshow("Tracking", small_frame);
 
           //cv::imshow("Tracking", draw_frame);
           int key = cv::waitKey(3);    // 3 or 16ms
