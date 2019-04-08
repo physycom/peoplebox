@@ -15,6 +15,9 @@
 
 #include <yolo_v2_class.hpp>
 
+#include <tracking.hpp>
+#include <barrier.hpp>
+
 #ifdef OPENCV
 
 std::vector<bbox_t> get_3d_coordinates(std::vector<bbox_t> bbox_vect, cv::Mat xyzrgba) {
@@ -38,106 +41,7 @@ std::vector<bbox_t> get_3d_coordinates(std::vector<bbox_t> bbox_vect, cv::Mat xy
 #endif    // USE_CMAKE_LIBS
 #endif    // CV_VERSION_EPOCH
 
-#include <kalman.hpp>
-#include <tracking.hpp>
-#include <barrier.hpp>
-
-void draw_boxes(cv::Mat mat_img, std::vector<bbox_t> result_vec, std::vector<std::string> obj_names,
-  const int &frame_num, int current_det_fps = -1, int current_cap_fps = -1)
-{
-  int const colors[6][3] = { {1, 0, 1}, {0, 0, 1}, {0, 1, 1}, {0, 1, 0}, {1, 1, 0}, {1, 0, 0} };
-
-  for (auto &i : result_vec)
-  {
-    cv::Scalar color = obj_id_to_color(i.track_id % 6);
-    cv::circle(mat_img, cv::Point(i.x + i.w / 2, i.y + i.h / 2), 20, color, 2);
-    //        if (obj_names.size() > i.obj_id) {
-    //            std::string obj_name = obj_names[i.obj_id];
-    //            if (i.track_id > 0) obj_name += " - " + std::to_string(i.track_id);
-    //            cv::Size const text_size = getTextSize(obj_name, cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, 2, 0);
-    //            int max_width = (text_size.width > i.w + 2) ? text_size.width : (i.w + 2);
-    //            max_width = std::max(max_width, (int)i.w + 2);
-    //            //max_width = std::max(max_width, 283);
-    //            std::string coords_3d;
-    //            if (!std::isnan(i.z_3d)) {
-    //                std::stringstream ss;
-    //                ss << std::fixed << std::setprecision(2) << "x:" << i.x_3d << "m y:" << i.y_3d << "m z:" << i.z_3d << "m ";
-    //                coords_3d = ss.str();
-    //                cv::Size const text_size_3d = getTextSize(ss.str(), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, 1, 0);
-    //                int const max_width_3d = (text_size_3d.width > i.w + 2) ? text_size_3d.width : (i.w + 2);
-    //                if (max_width_3d > max_width) max_width = max_width_3d;
-    //            }
-
-    //            cv::rectangle(mat_img, cv::Point2f(std::max((int)i.x - 1, 0), std::max((int)i.y - 35, 0)),
-    //                cv::Point2f(std::min((int)i.x + max_width, mat_img.cols - 1), std::min((int)i.y, mat_img.rows - 1)),
-    //                color, CV_FILLED, 8, 0);
-    //            putText(mat_img, obj_name, cv::Point2f(i.x, i.y - 16), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0, 0, 0), 2);
-    //            if(!coords_3d.empty()) putText(mat_img, coords_3d, cv::Point2f(i.x, i.y-1), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.8, cv::Scalar(0, 0, 0), 1);
-    //        }
-  }
-  if (current_det_fps >= 0 && current_cap_fps >= 0)
-  {
-    std::string fps_str = "FRAME " + std::to_string(frame_num) + "   FPS detection: " + std::to_string(current_det_fps) + "   FPS capture: " + std::to_string(current_cap_fps);
-    putText(mat_img, fps_str, cv::Point2f(10, 20), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(50, 255, 0), 2);
-  }
-}
-
-void draw_track(cv::Mat mat_img, const tracker_t &tracker)
-{
-  for (const auto &t : tracker.tracks)
-  {
-    for (int i = 0; i< int(t.detection.size() - 1); ++i)
-    {
-      if (i == 0)
-      {
-        putText(mat_img, std::to_string(t.track_id),
-          cv::Point(t.detection[i].x + t.detection[i].w * 0.5, t.detection[i].y + t.detection[i].h * 0.5), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0, 0, 0), 2);
-      }
-      cv::arrowedLine(mat_img,
-        cv::Point(t.detection[i].x + t.detection[i].w * 0.5, t.detection[i].y + t.detection[i].h * 0.5),
-        cv::Point(t.detection[i + 1].x + t.detection[i + 1].w * 0.5, t.detection[i + 1].y + t.detection[i + 1].h * 0.5),
-        obj_id_to_color(t.track_id % 6),
-        5);
-    }
-  }
-}
-
-void draw_barrier(cv::Mat mat_img, const std::vector<barrier> &barriers)
-{
-  for (const auto &b : barriers)
-  {
-    putText(mat_img, b.name,
-      cv::Point(b.x0, b.y0), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0, 0, 0), 2);
-
-    cv::arrowedLine(mat_img,
-      cv::Point(b.x0, b.y0),
-      cv::Point(b.x1, b.y1),
-      cv::Scalar(0, 0, 0),
-      2);
-  }
-}
-
-void draw_barrier(cv::Mat mat_img, const std::vector<fat_barrier> &barriers)
-{
-  for (const auto &b : barriers)
-  {
-    putText(mat_img, b.name,
-      cv::Point((b.bp.x0 + b.bm.x0) * 0.5, (b.bp.y0 + b.bm.y0) * 0.5), cv::FONT_HERSHEY_COMPLEX_SMALL, 1.2, cv::Scalar(0, 0, 0), 2);
-
-    cv::arrowedLine(mat_img,
-      cv::Point(b.bp.x0, b.bp.y0),
-      cv::Point(b.bp.x1, b.bp.y1),
-      cv::Scalar(0, 0, 0),
-      2);
-    
-    cv::arrowedLine(mat_img,
-      cv::Point(b.bm.x0, b.bm.y0),
-      cv::Point(b.bm.x1, b.bm.y1),
-      cv::Scalar(0, 0, 0),
-      2);
-
-  }
-}
+#include <draw_debug_frame.hpp>
 
 #endif    // OPENCV
 
@@ -234,12 +138,13 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
+  // network vars
   std::string names_file, cfg_file, weights_file, filename;
   float thresh;
-  bool openvc_show;
 
   // box vars
   std::string id_box;
+  std::string data_outdir;
 
   // barrier crossing vars
   std::vector<fat_barrier> barriers;
@@ -247,19 +152,29 @@ int main(int argc, char *argv[])
   jsoncons::json crossing;
   bool enable_barrier = false;
 
+  // debug vars
+  std::ofstream out_detections;
+  std::string out_detfile;
+  cv::VideoWriter out_video;
+  std::string out_videofile;
+  std::string out_imagebase;
+  bool enable_opencv_show = false;
+  bool enable_detection_csv = false;
+  bool enable_video_dump = false;
+  bool enable_image_dump = false;
+
   try
   {
     jsoncons::json jconf = jsoncons::json::parse_file(conf);
 
+    // network parameters
     if (!jconf.has_member("network")) throw std::runtime_error("No member 'network' in json config file.");
-
     names_file =   (jconf["network"].has_member("file_names"))   ? jconf["network"]["file_names"].as<std::string>()   : "data/coco.names";
     cfg_file =     (jconf["network"].has_member("file_cfg"))     ? jconf["network"]["file_cfg"].as<std::string>()     : "cfg/yolov3.cfg";
     weights_file = (jconf["network"].has_member("file_weights")) ? jconf["network"]["file_weights"].as<std::string>() : "yolov3.weights";
     thresh =       (jconf["network"].has_member("thresh"))       ? jconf["network"]["thresh"].as<float>()             : 0.2f;
-    openvc_show =  (jconf.has_member("opencv_show"))             ? jconf["opencv_show"].as<bool>()                    : false;
-    filename =     (jconf.has_member("filename"))                ? jconf["filename"].as<std::string>()                : "";
 
+    // barrier parameters
     if (jconf.has_member("barriers"))
     {
       for (const auto &b : jconf["barriers"].object_range())
@@ -272,10 +187,22 @@ int main(int argc, char *argv[])
     }
     enable_barrier = (jconf.has_member("enable_barrier")) ? jconf["enable_barrier"].as<bool>() : false;
 
+    // box and time parameters
+    filename    = (jconf.has_member("filename"))    ? jconf["filename"].as<std::string>()    : "";
+    data_outdir = (jconf.has_member("data_outdir")) ? jconf["data_outdir"].as<std::string>() : "data";
     id_box = (jconf.has_member("id_box")) ? jconf["id_box"].as<std::string>() : "unknown_box";
     crossing_dt = (jconf.has_member("crossing_dt")) ? jconf["crossing_dt"].as<int>() : 1;
     dump_dt =     (jconf.has_member("dump_dt"))     ? jconf["dump_dt"].as<int>()     : 5;
     if ( crossing_dt > dump_dt ) dump_dt = crossing_dt;
+
+    // debug parameters
+    out_videofile = filename + ".tracking.avi";
+    out_detfile = filename + ".det.csv";
+    out_imagebase = filename;
+    enable_opencv_show   = (jconf.has_member("enable_opencv_show"))   ? jconf["enable_opencv_show"].as<bool>()   : false;
+    enable_detection_csv = (jconf.has_member("enable_detection_csv")) ? jconf["enable_detection_csv"].as<bool>() : false;
+    enable_video_dump    = (jconf.has_member("enable_video_dump"))    ? jconf["enable_video_dump"].as<bool>()    : false;
+    enable_image_dump    = (jconf.has_member("enable_image_dump"))    ? jconf["enable_image_dump"].as<bool>()    : false;
   }
   catch (std::exception &e)
   {
@@ -285,8 +212,6 @@ int main(int argc, char *argv[])
 
   Detector detector(cfg_file, weights_file);
   auto obj_names = objects_names_from_file(names_file);
-
-  bool const save_output_videofile = true;   // true - for history
   bool detection_sync = true;                // true - for video-file
   
   // tracking vars
@@ -306,7 +231,12 @@ int main(int argc, char *argv[])
       )
     {
       if (protocol == "rtsp://" || protocol == "http://" || protocol == "https:/" )
+      {
         detection_sync = false;
+        out_videofile = data_outdir + "/" + "video_stream.tracking.avi";
+        out_detfile = data_outdir + "/" + "video_stream.det.csv";
+        out_imagebase = data_outdir + "/" + "image_stream.";
+      }
 
       cv::Mat cur_frame;
       std::atomic<int> fps_cap_counter(0), fps_det_counter(0);
@@ -327,11 +257,9 @@ int main(int argc, char *argv[])
       cv::Size const frame_size = cur_frame.size();
       std::cout << "Video input: " << filename << "\nsize: " << frame_size << "  FPS: " << video_fps << std::endl;
 
-      cv::VideoWriter output_video;
-      std::string out_videofile = filename + ".track.avi";
-      if (save_output_videofile)
-        output_video.open(out_videofile, CV_FOURCC('M', 'J', 'P', 'G'), std::max(35, video_fps), frame_size, true);
-        //output_video.open(out_videofile, CV_FOURCC('D', 'I', 'V', 'X'), std::max(35, video_fps), frame_size, true);
+      if (enable_video_dump)
+        out_video.open(out_videofile, CV_FOURCC('M', 'J', 'P', 'G'), std::max(35, video_fps), frame_size, true);
+        //out_video.open(out_videofile, CV_FOURCC('D', 'I', 'V', 'X'), std::max(35, video_fps), frame_size, true);
 
       struct detection_data_t {
         cv::Mat cap_frame;
@@ -400,7 +328,8 @@ int main(int argc, char *argv[])
         std::shared_ptr<image_t> det_image;
         detection_data_t detection_data;
 
-        std::ofstream out_detections(filename + ".det");
+        if ( enable_detection_csv ) out_detections.open(out_detfile);
+
         do {
           detection_data = prepare2detect.receive();
           det_image = detection_data.det_image;
@@ -410,12 +339,6 @@ int main(int argc, char *argv[])
             result_vec = detector.detect_resized(*det_image, frame_size.width, frame_size.height, thresh, true);  // true
           fps_det_counter++;
           //std::this_thread::sleep_for(std::chrono::milliseconds(150));
-
-          for (const auto &b : result_vec)
-            if (obj_names[b.obj_id] == "person")
-              out_detections << detection_data.frame_id << ";"
-              << b.x << ";" << b.y << ";"
-              << b.w << ";" << b.h << std::endl;
 
           detection_data.new_detection = true;
           detection_data.result_vec = result_vec;
@@ -465,15 +388,9 @@ int main(int argc, char *argv[])
           // barrier crossing
           if ( enable_barrier && (detection_data.frame_id % crossing_frame_num == 0) )
           {
-            std::cout << "CROSSING Frame " << detection_data.frame_id << std::endl;
             for (auto &b : barriers)
-            {
               for (const auto &t : tracker.tracks)
-              {
                 b.crossing(t);
-              }
-              //std::cout << "CROSSING " << b.name << "  Frame " << detection_data.frame_id << "  IN " << b.cnt_in << "  OUT " << b.cnt_out << std::endl;
-            }
 
             jsoncons::json jrecord;
             auto tnow = std::time(0);
@@ -505,8 +422,7 @@ int main(int argc, char *argv[])
 
             if ( crossing.size() >= dump_rec_num )
             {
-              //std::cout << "Dumpo" << std::endl; 
-              std::ofstream pplc_out("data/" + id_box + "_" + std::to_string(tnow) + ".json");
+              std::ofstream pplc_out(data_outdir + "/" + id_box + "_" + std::to_string(tnow) + ".json");
               if( !pplc_out ) throw std::runtime_error("Unable to create dump file.");
               pplc_out << jsoncons::pretty_print(crossing) << std::endl;
               pplc_out.close();
@@ -522,14 +438,10 @@ int main(int argc, char *argv[])
           draw_track(draw_frame, tracker);
           draw_barrier(draw_frame, barriers);
 
-          std::stringstream ss;
-          ss << std::setw(6) << std::setfill('0') << detection_data.frame_id;
-          cv::imwrite(filename + ss.str() + ".arrow.jpg", draw_frame);
-
           detection_data.result_vec = result_vec;
           detection_data.draw_frame = draw_frame;
           draw2show.send(detection_data);
-          if (output_video.isOpened()) draw2write.send(detection_data);
+          if (out_video.isOpened()) draw2write.send(detection_data);
         } while (!detection_data.exit_flag);
         std::cout << " t_draw exit" << std::endl;
       });
@@ -538,16 +450,16 @@ int main(int argc, char *argv[])
       // write frame to videofile
       t_write = std::thread([&]()
       {
-        if (output_video.isOpened()) {
+        if (out_video.isOpened()) {
           detection_data_t detection_data;
           cv::Mat output_frame;
           do {
             detection_data = draw2write.receive();
             if (detection_data.draw_frame.channels() == 4) cv::cvtColor(detection_data.draw_frame, output_frame, CV_RGBA2RGB);
             else output_frame = detection_data.draw_frame;
-            output_video << output_frame;
+            out_video << output_frame;
           } while (!detection_data.exit_flag);
-          output_video.release();
+          out_video.release();
         }
         std::cout << " t_write exit" << std::endl;
       });
@@ -557,7 +469,8 @@ int main(int argc, char *argv[])
       do {
         steady_end = std::chrono::steady_clock::now();
         float time_sec = std::chrono::duration<double>(steady_end - steady_start).count();
-        if (time_sec >= 1) {
+        if (time_sec >= 1) 
+        {
           current_fps_det = fps_det_counter.load() / time_sec;
           current_fps_cap = fps_cap_counter.load() / time_sec;
           steady_start = steady_end;
@@ -568,23 +481,38 @@ int main(int argc, char *argv[])
         detection_data = draw2show.receive();
         cv::Mat draw_frame = detection_data.draw_frame;
 
-        if (openvc_show) {
+        if ( enable_detection_csv )
+        {
+          for (const auto &b : detection_data.result_vec)
+            if (obj_names[b.obj_id] == "person")
+              out_detections << detection_data.frame_id << ";"
+              << b.x << ";" << b.y << ";"
+              << b.w << ";" << b.h << std::endl;
+        }
+
+        if ( enable_image_dump )
+        {
+          std::stringstream ss;
+          ss << std::setw(6) << std::setfill('0') << detection_data.frame_id;
+          cv::imwrite(out_imagebase + "." + ss.str() + ".jpg", draw_frame);
+        }
+
+        if ( enable_opencv_show ) 
+        {
           cv::Mat small_frame;
           cv::resize(draw_frame, small_frame, cv::Size(), 0.5, 0.5);
           cv::imshow("Tracking", small_frame);
 
-          //cv::imshow("Tracking", draw_frame);
           int key = cv::waitKey(3);    // 3 or 16ms
           if (key == 'f') show_small_boxes = !show_small_boxes;
           if (key == 'p') while (true) if (cv::waitKey(100) == 'p') break;
           if (key == 27) exit_flag = true;
         }
 
-        //std::cout << " current_fps_det = " << current_fps_det << ", current_fps_cap = " << current_fps_cap << std::endl;
       } while (!detection_data.exit_flag);
       std::cout << " show detection exit" << std::endl;
 
-      if (openvc_show) cv::destroyWindow("Tracking");
+      if ( enable_opencv_show ) cv::destroyWindow("Tracking");
 
       // wait for all threads
       if (t_cap.joinable()) t_cap.join();

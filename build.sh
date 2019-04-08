@@ -21,10 +21,13 @@ if [[ $(hostname) == *"hpc"* ]]; then
   export LD_LIBRARY_PATH=/home/HPC/afabbri/Installed/ffmpeg/lib:$LD_LIBRARY_PATH
 fi
 
-
 if [[ "$OSTYPE" == "darwin"* && "$1" == "gcc" ]]; then
   export CC="/usr/local/bin/gcc-8"
   export CXX="/usr/local/bin/g++-8"
+fi
+
+if [[ $(hostname) == *"jetson"* ]]; then
+  additional_defines="${additional_defines} -DOVERRIDE_GCC_OPTIM=-ffp-contract=fast"
 fi
 
 mkdir -p $build_dir
