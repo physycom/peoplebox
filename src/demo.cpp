@@ -45,17 +45,6 @@ std::vector<bbox_t> get_3d_coordinates(std::vector<bbox_t> bbox_vect, cv::Mat xy
 
 #endif    // OPENCV
 
-
-void show_console_result(std::vector<bbox_t> const result_vec, std::vector<std::string> const obj_names, int frame_id = -1) {
-  if (frame_id >= 0) std::cout << " Frame: " << frame_id << std::endl;
-  for (auto &i : result_vec) {
-    if (obj_names.size() > i.obj_id) std::cout << obj_names[i.obj_id] << " - ";
-    std::cout << "obj_id = " << i.obj_id << ",  x = " << i.x << ", y = " << i.y
-      << ", w = " << i.w << ", h = " << i.h
-      << std::setprecision(3) << ", prob = " << i.prob << std::endl;
-  }
-}
-
 std::vector<std::string> objects_names_from_file(std::string const filename) {
   std::ifstream file(filename);
   std::vector<std::string> file_lines;
@@ -65,6 +54,7 @@ std::vector<std::string> objects_names_from_file(std::string const filename) {
   return file_lines;
 }
 
+/////////////////////////////////// MAIN ///////////////////////////////////
 template<typename T>
 class send_one_replaceable_object_t {
   const bool sync;
@@ -98,27 +88,37 @@ public:
   {}
 };
 
-/////////////////////////////////// MAIN ///////////////////////////////////
 void usage(char * progname)
 {
   std::string pname(progname);
   std::cerr << "Usage: " << pname.substr(pname.find_last_of("/\\") + 1) << " path/to/json/config" << std::endl;
   std::cerr << R"(Sample config JSON file
 {
-  "network" : {
+  "filename": "/path/to/video.avi",
+  "network": {
     "file_names"   : "darknet/data/coco.names",
     "file_cfg"     : "darknet/cfg/yolov3.cfg",
-    "file_weights" : "darknet/yolov3.weights",
-    "thresh"       : 0.2
+    "file_weights" : "yolov3.weights",
+    "thresh"       : 0.5
   },
+  "enable_barrier" : true,
   "barriers" : {
     "test_barrier" : {
       "pnt_start" : [100, 100],
-      "pnt_end"   : [900, 900]
+      "pnt_end"   : [900, 900],
+      "thickness" : 10
     }
   },
-  "opencv_show" : "false",
-  "filename"    : "video.avi"
+  "id_box"              : "MYBOX",
+  "crossing_dt"         : 3,
+  "dump_dt"             : 60,
+  "data_outdir"         : "data",
+  "image_dt"            : 300,
+  "image_outdir"        : "image",
+  "enable_opencv_show"  : true,
+  "enable_detection_cs" : true,
+  "enable_video_dump"   : true,
+  "enable_image_dump"   : true
 }
 )";
 }
@@ -144,13 +144,17 @@ int main(int argc, char *argv[])
 
   // box vars
   std::string id_box;
-  std::string data_outdir;
 
   // barrier crossing vars
   std::vector<fat_barrier> barriers;
   int crossing_dt, crossing_frame_num, dump_dt, dump_rec_num;
+  std::string data_outdir;
   jsoncons::json crossing;
   bool enable_barrier = false;
+
+  // realtime image vars
+  std::string image_outdir;
+  int image_dt, image_frame_num;
 
   // debug vars
   std::ofstream of_capture, of_prepare, of_detect, of_tracking, of_write;
@@ -190,12 +194,14 @@ int main(int argc, char *argv[])
     enable_barrier = (jconf.has_member("enable_barrier")) ? jconf["enable_barrier"].as<bool>() : false;
 
     // box and time parameters
-    filename    = (jconf.has_member("filename"))    ? jconf["filename"].as<std::string>()    : "";
-    data_outdir = (jconf.has_member("data_outdir")) ? jconf["data_outdir"].as<std::string>() : "data";
-    id_box =      (jconf.has_member("id_box"))      ? jconf["id_box"].as<std::string>()      : "unknown_box";
-    crossing_dt = (jconf.has_member("crossing_dt")) ? jconf["crossing_dt"].as<int>()         : 1;
-    dump_dt =     (jconf.has_member("dump_dt"))     ? jconf["dump_dt"].as<int>()             : 5;
+    filename     = (jconf.has_member("filename"))     ? jconf["filename"].as<std::string>()     : "";
+    data_outdir  = (jconf.has_member("data_outdir"))  ? jconf["data_outdir"].as<std::string>()  : "data";
+    image_outdir = (jconf.has_member("image_outdir")) ? jconf["image_outdir"].as<std::string>() : "image";
+    id_box       = (jconf.has_member("id_box"))       ? jconf["id_box"].as<std::string>()       : "nameless_box";
+    crossing_dt  = (jconf.has_member("crossing_dt"))  ? jconf["crossing_dt"].as<int>()          : 1;
+    dump_dt      = (jconf.has_member("dump_dt"))      ? jconf["dump_dt"].as<int>()              : 5;
     if ( crossing_dt > dump_dt ) dump_dt = crossing_dt;
+    image_dt     = (jconf.has_member("image_dt"))     ? jconf["image_dt"].as<int>()             : 300;
 
     // debug parameters
     out_videofile = filename + ".tracking.avi";
@@ -213,6 +219,7 @@ int main(int argc, char *argv[])
     exit(2);
   }
 
+  // detection vars
   Detector detector(cfg_file, weights_file);
   auto obj_names = objects_names_from_file(names_file);
 
@@ -270,6 +277,7 @@ int main(int argc, char *argv[])
       video_fps = cap.get(CV_CAP_PROP_FPS);
       crossing_frame_num = video_fps * crossing_dt;
       dump_rec_num =  int(dump_dt / float(crossing_dt));
+      image_frame_num = video_fps * image_dt;
       cap >> cur_frame;
       cv::Size const frame_size = cur_frame.size();
       std::cout << "Video input: " << filename << "\nsize: " << frame_size << "  FPS: " << video_fps << std::endl;
@@ -340,6 +348,10 @@ int main(int argc, char *argv[])
           prepare2detect.send(detection_data);    // detection
           if (enable_time_log)  of_prepare << std::chrono::duration<double>(std::chrono::steady_clock::now() - steady_end).count() << " ";
 
+          // dump realtime image
+          if ( detection_data.frame_id % image_frame_num == 0 )
+            cv::imwrite(image_outdir + "/" + id_box + "_" + std::to_string(std::time(0)) + ".jpg", detection_data.cap_frame);
+
         } while (!detection_data.exit_flag);
         of_prepare.close();
         std::cout << " t_prepare exit" << std::endl;
@@ -380,7 +392,7 @@ int main(int argc, char *argv[])
         std::cout << " t_detect exit" << std::endl;
       });
 
-      // draw rectangles (and track objects)
+      // draw and track
       t_draw = std::thread([&]()
       {
         detection_data_t detection_data;
