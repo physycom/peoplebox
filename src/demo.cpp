@@ -153,6 +153,7 @@ int main(int argc, char *argv[])
   bool enable_barrier = false;
 
   // debug vars
+  std::ofstream of_capture, of_prepare, of_detect, of_tracking, of_write;
   std::ofstream out_detections;
   std::string out_detfile;
   cv::VideoWriter out_video;
@@ -160,6 +161,7 @@ int main(int argc, char *argv[])
   std::string out_imagebase;
   bool enable_opencv_show = false;
   bool enable_detection_csv = false;
+  bool enable_time_log = false;
   bool enable_video_dump = false;
   bool enable_image_dump = false;
 
@@ -180,7 +182,7 @@ int main(int argc, char *argv[])
       for (const auto &b : jconf["barriers"].object_range())
       {
         barriers.emplace_back( std::string(b.key()),
-          b.value()["pnt_start"][0].as<int>(), b.value()["pnt_start"][1].as<int>(), 
+          b.value()["pnt_start"][0].as<int>(), b.value()["pnt_start"][1].as<int>(),
           b.value()["pnt_end"][0].as<int>(), b.value()["pnt_end"][1].as<int>(),
           b.value()["thickness"].as<int>() );
       }
@@ -190,9 +192,9 @@ int main(int argc, char *argv[])
     // box and time parameters
     filename    = (jconf.has_member("filename"))    ? jconf["filename"].as<std::string>()    : "";
     data_outdir = (jconf.has_member("data_outdir")) ? jconf["data_outdir"].as<std::string>() : "data";
-    id_box = (jconf.has_member("id_box")) ? jconf["id_box"].as<std::string>() : "unknown_box";
-    crossing_dt = (jconf.has_member("crossing_dt")) ? jconf["crossing_dt"].as<int>() : 1;
-    dump_dt =     (jconf.has_member("dump_dt"))     ? jconf["dump_dt"].as<int>()     : 5;
+    id_box =      (jconf.has_member("id_box"))      ? jconf["id_box"].as<std::string>()      : "unknown_box";
+    crossing_dt = (jconf.has_member("crossing_dt")) ? jconf["crossing_dt"].as<int>()         : 1;
+    dump_dt =     (jconf.has_member("dump_dt"))     ? jconf["dump_dt"].as<int>()             : 5;
     if ( crossing_dt > dump_dt ) dump_dt = crossing_dt;
 
     // debug parameters
@@ -201,6 +203,7 @@ int main(int argc, char *argv[])
     out_imagebase = filename;
     enable_opencv_show   = (jconf.has_member("enable_opencv_show"))   ? jconf["enable_opencv_show"].as<bool>()   : false;
     enable_detection_csv = (jconf.has_member("enable_detection_csv")) ? jconf["enable_detection_csv"].as<bool>() : false;
+    enable_time_log      = (jconf.has_member("enable_time_log"))      ? jconf["enable_time_log"].as<bool>()      : false;
     enable_video_dump    = (jconf.has_member("enable_video_dump"))    ? jconf["enable_video_dump"].as<bool>()    : false;
     enable_image_dump    = (jconf.has_member("enable_image_dump"))    ? jconf["enable_image_dump"].as<bool>()    : false;
   }
@@ -212,8 +215,17 @@ int main(int argc, char *argv[])
 
   Detector detector(cfg_file, weights_file);
   auto obj_names = objects_names_from_file(names_file);
+
+  // extract indices of desired detection object types
+  std::vector<std::string> obj_types({"bottle", "person"}); // TODO move this to json config
+  std::vector<int> det_types;
+  for(int i = 0; i < int(obj_names.size()); ++i)
+    if ( std::any_of(obj_types.begin(), obj_types.end(), [i, obj_names](std::string s){ return obj_names[i] == s; }) )
+      det_types.emplace_back(i);
+
+  // GUARDASELO PER BENISSIMO ***********
   bool detection_sync = true;                // true - for video-file
-  
+
   // tracking vars
   int frame_story = 10;
   int max_dist_px = 120;
@@ -249,7 +261,12 @@ int main(int argc, char *argv[])
 
       cv::VideoCapture cap;
       cap.open(filename);
-      if( !cap.isOpened() ) throw std::runtime_error("Unable to open input video: " + filename);
+      if( !cap.isOpened() ) {
+#ifdef WIN32
+        std::cerr << "Check that you have copied file opencv_ffmpeg3xx_64.dll to the same directory where is demo.exe" << std::endl;
+#endif
+        throw std::runtime_error("Unable to open input video: " + filename);
+      }
       video_fps = cap.get(CV_CAP_PROP_FPS);
       crossing_frame_num = video_fps * crossing_dt;
       dump_rec_num =  int(dump_dt / float(crossing_dt));
@@ -284,7 +301,9 @@ int main(int argc, char *argv[])
       {
         uint64_t frame_id = 0;
         detection_data_t detection_data;
+        if (enable_time_log) of_capture.open(data_outdir + "/of_capture.log");
         do {
+          steady_end = std::chrono::steady_clock::now();
           detection_data = detection_data_t();
           cap >> detection_data.cap_frame;
           fps_cap_counter++;
@@ -299,7 +318,9 @@ int main(int argc, char *argv[])
             cap2draw.send(detection_data);       // skip detection
           }
           cap2prepare.send(detection_data);
+          if (enable_time_log)  of_capture << std::chrono::duration<double>(std::chrono::steady_clock::now() - steady_end).count() << " ";
         } while (!detection_data.exit_flag);
+        of_capture.close();
         std::cout << " t_cap exit" << std::endl;
       });
 
@@ -309,14 +330,18 @@ int main(int argc, char *argv[])
       {
         std::shared_ptr<image_t> det_image;
         detection_data_t detection_data;
+        if (enable_time_log)  of_prepare.open(data_outdir + "/of_prepare.log");
         do {
+          steady_end = std::chrono::steady_clock::now();
           detection_data = cap2prepare.receive();
 
           det_image = detector.mat_to_image_resize(detection_data.cap_frame);
           detection_data.det_image = det_image;
           prepare2detect.send(detection_data);    // detection
+          if (enable_time_log)  of_prepare << std::chrono::duration<double>(std::chrono::steady_clock::now() - steady_end).count() << " ";
 
         } while (!detection_data.exit_flag);
+        of_prepare.close();
         std::cout << " t_prepare exit" << std::endl;
       });
 
@@ -329,22 +354,29 @@ int main(int argc, char *argv[])
         detection_data_t detection_data;
 
         if ( enable_detection_csv ) out_detections.open(out_detfile);
+        if (enable_time_log) of_detect.open(data_outdir + "/of_detect.log");
 
         do {
+          steady_end = std::chrono::steady_clock::now();
           detection_data = prepare2detect.receive();
           det_image = detection_data.det_image;
           std::vector<bbox_t> result_vec;
 
           if (det_image)
-            result_vec = detector.detect_resized(*det_image, frame_size.width, frame_size.height, thresh, true);  // true
+          {
+            if (det_types.size()) result_vec = detector.detect_resized_types(*det_image, frame_size.width, frame_size.height, det_types, thresh, true);  // true
+            else                  result_vec = detector.detect_resized(*det_image, frame_size.width, frame_size.height, thresh, true);
+          }
           fps_det_counter++;
           //std::this_thread::sleep_for(std::chrono::milliseconds(150));
 
           detection_data.new_detection = true;
           detection_data.result_vec = result_vec;
           detect2draw.send(detection_data);
+          if (enable_time_log) of_detect << std::chrono::duration<double>(std::chrono::steady_clock::now() - steady_end).count() << " ";
         } while (!detection_data.exit_flag);
         out_detections.close();
+        of_detect.close();
         std::cout << " t_detect exit" << std::endl;
       });
 
@@ -352,7 +384,9 @@ int main(int argc, char *argv[])
       t_draw = std::thread([&]()
       {
         detection_data_t detection_data;
+        if (enable_time_log) of_tracking.open(data_outdir + "/of_tracking.log");
         do {
+          steady_end = std::chrono::steady_clock::now();
 
           // for Video-file
           if (detection_sync) {
@@ -442,7 +476,9 @@ int main(int argc, char *argv[])
           detection_data.draw_frame = draw_frame;
           draw2show.send(detection_data);
           if (out_video.isOpened()) draw2write.send(detection_data);
+          if (enable_time_log) of_tracking << std::chrono::duration<double>(std::chrono::steady_clock::now() - steady_end).count() << " ";
         } while (!detection_data.exit_flag);
+        of_tracking.close();
         std::cout << " t_draw exit" << std::endl;
       });
 
@@ -453,13 +489,17 @@ int main(int argc, char *argv[])
         if (out_video.isOpened()) {
           detection_data_t detection_data;
           cv::Mat output_frame;
+          if (enable_time_log) of_write.open(data_outdir + "/of_write.log");
           do {
+            steady_end = std::chrono::steady_clock::now();
             detection_data = draw2write.receive();
             if (detection_data.draw_frame.channels() == 4) cv::cvtColor(detection_data.draw_frame, output_frame, CV_RGBA2RGB);
             else output_frame = detection_data.draw_frame;
             out_video << output_frame;
+            if (enable_time_log) of_write << std::chrono::duration<double>(std::chrono::steady_clock::now() - steady_end).count() << " ";
           } while (!detection_data.exit_flag);
           out_video.release();
+          of_write.close();
         }
         std::cout << " t_write exit" << std::endl;
       });
@@ -469,7 +509,7 @@ int main(int argc, char *argv[])
       do {
         steady_end = std::chrono::steady_clock::now();
         float time_sec = std::chrono::duration<double>(steady_end - steady_start).count();
-        if (time_sec >= 1) 
+        if (time_sec >= 1)
         {
           current_fps_det = fps_det_counter.load() / time_sec;
           current_fps_cap = fps_cap_counter.load() / time_sec;
@@ -497,7 +537,7 @@ int main(int argc, char *argv[])
           cv::imwrite(out_imagebase + "." + ss.str() + ".jpg", draw_frame);
         }
 
-        if ( enable_opencv_show ) 
+        if ( enable_opencv_show )
         {
           cv::Mat small_frame;
           cv::resize(draw_frame, small_frame, cv::Size(), 0.5, 0.5);
@@ -523,12 +563,12 @@ int main(int argc, char *argv[])
       if (t_write.joinable()) t_write.join();
     }
   }
-  catch (std::exception &e) 
-  { 
+  catch (std::exception &e)
+  {
     std::cerr << "EXC: " << e.what() << std::endl;
   }
-  catch (...) 
-  { 
+  catch (...)
+  {
     std::cerr << "EXC: unknown exception." << std::endl;
   }
 
