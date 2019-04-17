@@ -100,14 +100,14 @@ static char human_timenow[MAX_LINE_LEN];
 static char json_name[200];
 
 // thread functions
-void* fetch_in_thread(void* ptr)
+void* pb_fetch_in_thread(void* ptr)
 {
   //buff[buff_index] = get_image_from_stream_cpp(cap);
   letterbox_image_into(buff[buff_index], net.w, net.h, buff_letter[buff_index]);
   return 0;
 }
 
-void* detect_in_thread(void* ptr)
+void* pb_detect_in_thread(void* ptr)
 {
   float nms = .4;
   int i, j, count = 0, nboxes = 0, person_num = 0;
@@ -361,11 +361,11 @@ int main()
   demo_time = what_time_is_it_now();
   while (!demo_done) {
     buff_index = (buff_index + 1) % 3;
-    if (pthread_create(&fetch_thread, 0, fetch_in_thread, 0)) {
+    if (pthread_create(&fetch_thread, 0, pb_fetch_in_thread, 0)) {
       MESSAGE_ERR("thread creation failed");
       exit(ERR_THREAD_CREATION);
     }
-    if (pthread_create(&detect_thread, 0, detect_in_thread, 0)) {
+    if (pthread_create(&detect_thread, 0, pb_detect_in_thread, 0)) {
       MESSAGE_ERR("thread creation failed");
       exit(ERR_THREAD_CREATION);
     }

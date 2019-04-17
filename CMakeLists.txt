@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
 
 if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
   set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
@@ -6,6 +6,7 @@ endif()
 
 project(peoplebox)
 enable_language(CXX)
+set(CMAKE_CXX_STANDARD 11)
 
 if (EXISTS "$ENV{WORKSPACE}/sysconfig/cmake/physycom_config.cmake")
    message(STATUS "Enabling physycom settings")
@@ -14,11 +15,8 @@ else()
    message(STATUS "Unable to find physycom settings file")
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules/" ${CMAKE_MODULE_PATH})
-
 find_package(Darknet REQUIRED)
-find_package(jsoncons REQUIRED)
+#find_package(jsoncons REQUIRED)
 find_package(OpenCV REQUIRED)
 
 if(VERBOSE)
@@ -45,6 +43,6 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/src/darktrack.cpp.in ${CMAKE_CURRENT_LI
 add_executable(darktrack ${CMAKE_CURRENT_LIST_DIR}/src/auto/darktrack.cpp ${CMAKE_CURRENT_LIST_DIR}/src/darktrack_utils.cpp)
 
 target_link_libraries(darktrack Darknet::darklib)
-target_link_libraries(darktrack jsoncons)
+#target_link_libraries(darktrack jsoncons)
 
 install(TARGETS darktrack DESTINATION ${CMAKE_SOURCE_DIR}/)
