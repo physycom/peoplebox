@@ -1,2 +1,2 @@
-rm -f save_stream darktrack darktrack.* darknet_lib.* libdarknet_lib.* darknet/darknet_lib.* darknet/libdarknet_lib.*
+rm -f save_stream* dump_stream* dump_frame* darktrack*
 echo "Removed binaries from install folders!"

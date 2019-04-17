@@ -60,5 +60,4 @@ build_script:
   - if [%configuration%]==[Release] cd build_release && cmake --build . --config Release --parallel 8 --target install && cd ..
 
 artifacts:
-  - path: lib
   - path: '*.exe'

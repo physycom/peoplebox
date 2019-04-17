@@ -99,7 +99,9 @@ static struct tm* tm_tnow;
 static char human_timenow[MAX_LINE_LEN];
 static char json_name[200];
 
-// thread functions
+// commented because official API surface of Darklib is not enough to cover all our functions!
+
+/*
 void* pb_fetch_in_thread(void* ptr)
 {
   //buff[buff_index] = get_image_from_stream_cpp(cap);
@@ -138,7 +140,7 @@ void* pb_detect_in_thread(void* ptr)
     if (dets[i].prob[person_name_index] > demo_thresh) // if person
       ++person_num;
 
-  /* people tracking */
+  // people tracking
   if (frame_num) {
     na = 0;
     nb = 0;
@@ -149,7 +151,7 @@ void* pb_detect_in_thread(void* ptr)
         x = dets[i].bbox.x * buff[0].w; // bbox coords in [0, 1)
         y = dets[i].bbox.y * buff[0].h; // bbox coords in [0, 1)
 
-        /************************ TRACKING ****************************/
+        //************************ TRACKING ****************************
         min_dist = HUGE_VAL;
         mins = -1;
         if (y > BARRIER_TOP - TOLERANCE && y < BARRIER_BOTTOM + TOLERANCE && x > BARRIER_LEFT - TOLERANCE && x < BARRIER_RIGHT + TOLERANCE) // if in TRACKING ROI
@@ -162,7 +164,7 @@ void* pb_detect_in_thread(void* ptr)
             mins = (min_dist < dist) ? mins : j;
             min_dist = (min_dist < dist) ? min_dist : dist;
           }
-          /************************ FLUX ********************************/
+          //************************ FLUX ********************************
           if (strcmp(DIRECTION, "UP_DOWN") == 0) // make a switch instead
           {
             if (y < (BARRIER_TOP + BARRIER_BOTTOM) * .5f)
@@ -176,14 +178,14 @@ void* pb_detect_in_thread(void* ptr)
               ++nb;
           }
         } // end if in TRACKING ROI
-        /************************ TRACKING ****************************/
+        //************************ TRACKING ****************************
         if (mins == -1)
           continue; // no matches found
         UP += (y < BARRIER_TOP && old_coords[mins][1] > BARRIER_TOP) ? 1 : 0;
         DOWN += (y > BARRIER_BOTTOM && old_coords[mins][1] < BARRIER_BOTTOM) ? 1 : 0;
         LEFT += (x < BARRIER_LEFT && old_coords[mins][0] > BARRIER_LEFT) ? 1 : 0;
         RIGHT += (x > BARRIER_RIGHT && old_coords[mins][0] < BARRIER_RIGHT) ? 1 : 0;
-        /**********************************************************/
+        //**********************************************************
       }
     }
   } else {
@@ -229,8 +231,8 @@ void* pb_detect_in_thread(void* ptr)
   ++frame_num;
 
 #ifndef _WIN32
-  MESSAGE("\033[2J"); /* clear the screen */
-  MESSAGE("\033[1;1H"); /* move cursor to line 1 column 1 */
+  MESSAGE("\033[2J");   // clear the screen
+  MESSAGE("\033[1;1H"); // move cursor to line 1 column 1
 #endif
   MESSAGE("UNIX  Time   : %.3f\n", tnow);
   MESSAGE("Human Time   : %s\n", human_timenow);
@@ -292,6 +294,8 @@ void* pb_detect_in_thread(void* ptr)
   return 0;
 }
 
+*/
+
 int main()
 {
   int i;
@@ -314,17 +318,17 @@ int main()
   }
   demo_names = (char**)malloc(demo_classes * sizeof(char*));
   for (i = 0; i < demo_classes; ++i) {
-    demo_names[i] = fgetl(file);
+    //demo_names[i] = fgetl(file);
     if (!strcmp(demo_names[i], person_label))
       person_name_index = i;
   }
   fclose(file);
 
-  net = parse_network_cfg(cfg);
-  load_weights(&net, weights);
+  //net = parse_network_cfg(cfg);
+  //load_weights(&net, weights);
   //net = load_network(cfg, weights, 0);
 
-  set_batch_network(&net, 1);
+  //set_batch_network(&net, 1);
   pthread_t detect_thread;
   pthread_t fetch_thread;
 
@@ -351,16 +355,17 @@ int main()
   //}
 
   //buff[0] = get_image_from_stream(cap);
-  buff[1] = copy_image(buff[0]);
-  buff[2] = copy_image(buff[0]);
+  //buff[1] = copy_image(buff[0]);
+  //buff[2] = copy_image(buff[0]);
   buff_letter[0] = letterbox_image(buff[0], net.w, net.h);
   buff_letter[1] = letterbox_image(buff[0], net.w, net.h);
   buff_letter[2] = letterbox_image(buff[0], net.w, net.h);
 
   i = 0;
-  demo_time = what_time_is_it_now();
+  //demo_time = what_time_is_it_now();
   while (!demo_done) {
     buff_index = (buff_index + 1) % 3;
+    /*
     if (pthread_create(&fetch_thread, 0, pb_fetch_in_thread, 0)) {
       MESSAGE_ERR("thread creation failed");
       exit(ERR_THREAD_CREATION);
@@ -369,9 +374,9 @@ int main()
       MESSAGE_ERR("thread creation failed");
       exit(ERR_THREAD_CREATION);
     }
-
-    fps = 1. / (what_time_is_it_now() - demo_time);
-    demo_time = what_time_is_it_now();
+    */
+    //fps = 1. / (what_time_is_it_now() - demo_time);
+    //demo_time = what_time_is_it_now();
 
     pthread_join(fetch_thread, 0);
     pthread_join(detect_thread, 0);
