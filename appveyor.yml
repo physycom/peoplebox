@@ -46,7 +46,9 @@ install:
   - git pull
   - .\bootstrap-vcpkg.bat
   - if [%USE_CUDA%]==[yes] vcpkg install cuda
-  - vcpkg install darknet[opencv] jsoncons  ## darknet[opencv-cuda] is too big to build, timing out (>1h).
+  - vcpkg install opencv[ffmpeg]  ## opencv[ffmpeg,cuda] is too big to build, timing out (>1h).
+  - vcpkg install jsoncons stb
+  - vcpkg install darknet[opencv]
   - cd %WORKSPACE%\peoplebox\
   - mkdir build_debug && cd build_debug
   - if [%configuration%]==[Debug] cmake -G "Visual Studio 15 2017" -T "host=x64" -A "x64" "-DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" "-DVCPKG_TARGET_TRIPLET=%VCPKG_DEFAULT_TRIPLET%" -DCMAKE_BUILD_TYPE="Debug" ..

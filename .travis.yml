@@ -130,7 +130,9 @@ install:
   - cd vcpkg
   - git pull
   - ./bootstrap-vcpkg.sh
-  - travis_wait ./vcpkg install darknet[opencv] jsoncons
+  - travis_wait ./vcpkg install opencv[ffmpeg]
+  - travis_wait ./vcpkg install jsoncons stb
+  - travis_wait ./vcpkg install darknet[opencv]
   - popd
 
 before_script:
