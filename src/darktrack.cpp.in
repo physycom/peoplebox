@@ -12,7 +12,7 @@ static network net;
 static image buff[3];
 static image buff_letter[3];
 static int buff_index = 0;
-static CvCapture* cap;
+//static CvCapture* cap;
 static float fps = 0;
 static float demo_thresh = @DARKNET_THRESHOLD@;
 static float demo_hier = @DARKNET_THRESHOLD@;
@@ -102,7 +102,7 @@ static char json_name[200];
 // thread functions
 void* fetch_in_thread(void* ptr)
 {
-  buff[buff_index] = get_image_from_stream_cpp(cap);
+  //buff[buff_index] = get_image_from_stream_cpp(cap);
   letterbox_image_into(buff[buff_index], net.w, net.h, buff_letter[buff_index]);
   return 0;
 }
@@ -343,14 +343,14 @@ int main()
   avg = (float*)calloc(demo_total, sizeof(float));
 
   MESSAGE("video stream: %s\n", filename);
-  cap = cvCaptureFromFile(filename);
+  //cap = cvCaptureFromFile(filename);
 
-  if (!cap) {
+  //if (!cap) {
     MESSAGE_ERR("cannot connect to video stream.\n");
     exit(ERR_NO_STREAM);
-  }
+  //}
 
-  buff[0] = get_image_from_stream(cap);
+  //buff[0] = get_image_from_stream(cap);
   buff[1] = copy_image(buff[0]);
   buff[2] = copy_image(buff[0]);
   buff_letter[0] = letterbox_image(buff[0], net.w, net.h);

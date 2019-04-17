@@ -1,7 +1,0 @@
-[submodule "darknet"]
-	path = darknet
-	url = https://github.com/cenit/darknet.git
-	branch = dev/cenit/yoloAlexey
-[submodule "jsoncons"]
-	path = jsoncons
-	url = https://github.com/danielaparker/jsoncons.git

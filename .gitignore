@@ -11,13 +11,6 @@
 *.dylib
 *.lib
 *.dll
-darktrack
-dump_frame
-dump_stream
-uselib
-uselib_*
-save_frame
-save_stream
 src/auto/*
 
 # OS Generated #
@@ -33,6 +26,7 @@ bin/
 .vs/
 .vscode/
 *.weights
-
+data/
+data
 *.avi
 *.mp4

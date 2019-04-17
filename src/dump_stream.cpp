@@ -13,9 +13,9 @@ int main(int argc, char** argv)
     std::cout << "Error opening video stream or file" << std::endl;
     exit(1);
   }
-  int frame_width = vcap.get(CV_CAP_PROP_FRAME_WIDTH);
-  int frame_height = vcap.get(CV_CAP_PROP_FRAME_HEIGHT);
-  cv::VideoWriter video("out.avi", CV_FOURCC('M', 'J', 'P', 'G'), 10, cv::Size(frame_width, frame_height), true);
+  int frame_width = vcap.get(cv::CAP_PROP_FRAME_WIDTH);
+  int frame_height = vcap.get(cv::CAP_PROP_FRAME_HEIGHT);
+  cv::VideoWriter video("out.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 10, cv::Size(frame_width, frame_height), true);
 
   for (;;) {
     cv::Mat frame;

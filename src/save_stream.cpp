@@ -52,11 +52,11 @@ int main(int argc, char** argv)
     std::cout << "Error opening video stream or file" << std::endl;
     exit(1);
   }
-  int frame_width = vcap.get(CV_CAP_PROP_FRAME_WIDTH);
-  int frame_height = vcap.get(CV_CAP_PROP_FRAME_HEIGHT);
+  int frame_width = vcap.get(cv::CAP_PROP_FRAME_WIDTH);
+  int frame_height = vcap.get(cv::CAP_PROP_FRAME_HEIGHT);
   std::string videoname = "video_" + time_now_hr() + ".mp4";
 
-  cv::VideoWriter video(videoname, CV_FOURCC('X', '2', '6', '4'), cam_fps, cv::Size(frame_width, frame_height), true);
+  cv::VideoWriter video(videoname, cv::VideoWriter::fourcc('X', '2', '6', '4'), cam_fps, cv::Size(frame_width, frame_height), true);
 
   int maxframe = videolen_sec * cam_fps;
   for (int i = 0; i < maxframe; ++i) {
