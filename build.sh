@@ -11,34 +11,38 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 else
   vcpkg_triplet="x64-linux"
 fi
-vcpkg_fork="_darknet_include"
+#vcpkg_fork="_darknet_include"
 
-if [ -d ${VCPKG_ROOT}${vcpkg_fork} ]
+if [[ ! -z "${VCPKG_ROOT}" ]] && [ -d ${VCPKG_ROOT}${vcpkg_fork} ]
 then
   vcpkg_path="${VCPKG_ROOT}${vcpkg_fork}"
   vcpkg_define="-DCMAKE_TOOLCHAIN_FILE=${vcpkg_path}/scripts/buildsystems/vcpkg.cmake"
   vcpkg_triplet_define="-DVCPKG_TARGET_TRIPLET=$vcpkg_triplet"
   echo "Found vcpkg in VCPKG_ROOT: ${vcpkg_path}"
-elif [ -d ${WORKSPACE}/vcpkg${vcpkg_fork} ]
+elif [[ ! -z "${WORKSPACE}" ]] && [ -d ${WORKSPACE}/vcpkg${vcpkg_fork} ]
 then
   vcpkg_path="${WORKSPACE}/vcpkg${vcpkg_fork}"
   vcpkg_define="-DCMAKE_TOOLCHAIN_FILE=${vcpkg_path}/scripts/buildsystems/vcpkg.cmake"
   vcpkg_triplet_define="-DVCPKG_TARGET_TRIPLET=$vcpkg_triplet"
   echo "Found vcpkg in WORKSPACE/vcpkg: ${vcpkg_path}"
 else
-  (>&2 echo "peoplebox is unsupported without vcpkg, use at your own risk!")
+  (>&2 echo "peoplebox is unsupported without vcpkg")
+  exit
 fi
 
 ## DEBUG
 #mkdir -p build_debug
 #cd build_debug
 #cmake .. -DCMAKE_BUILD_TYPE=Debug ${vcpkg_define} ${vcpkg_triplet_define} ${additional_defines} ${additional_build_setup}
-#cmake --build . --target install --parallel ${number_of_build_workers}  #valid only for CMake 3.12+
+#cmake --build . --target install -- -j${number_of_build_workers}
+##cmake --build . --target install --parallel ${number_of_build_workers}  #valid only for CMake 3.12+
 #cd ..
 
 # RELEASE
 mkdir -p build_release
 cd build_release
+echo cmake .. -DCMAKE_BUILD_TYPE=Release ${vcpkg_define} ${vcpkg_triplet_define} ${additional_defines} ${additional_build_setup}
 cmake .. -DCMAKE_BUILD_TYPE=Release ${vcpkg_define} ${vcpkg_triplet_define} ${additional_defines} ${additional_build_setup}
-cmake --build . --target install --parallel ${number_of_build_workers}  #valid only for CMake 3.12+
+cmake --build . --target install -- -j${number_of_build_workers}
+#cmake --build . --target install --parallel ${number_of_build_workers}  #valid only for CMake 3.12+
 cd ..
