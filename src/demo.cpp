@@ -123,7 +123,7 @@ void usage(char * progname)
 )";
 }
 
-constexpr int SW_VER = 100;
+constexpr int SW_VER = 101;
 
 int main(int argc, char *argv[])
 {
@@ -350,7 +350,11 @@ int main(int argc, char *argv[])
 
           // dump realtime image
           if ( detection_data.frame_id % image_frame_num == 0 )
-            cv::imwrite(image_outdir + "/" + id_box + "_" + std::to_string(std::time(0)) + ".jpg", detection_data.cap_frame);
+          {
+            cv::Mat barrier_frame = detection_data.cap_frame;
+            draw_barrier(barrier_frame, barriers);
+            cv::imwrite(image_outdir + "/" + id_box + "_" + std::to_string(std::time(0)) + ".jpg", barrier_frame);
+          }
 
         } while (!detection_data.exit_flag);
         of_prepare.close();
@@ -366,7 +370,7 @@ int main(int argc, char *argv[])
         detection_data_t detection_data;
 
         if ( enable_detection_csv ) out_detections.open(out_detfile);
-        if (enable_time_log) of_detect.open(data_outdir + "/of_detect.log");
+        if ( enable_time_log ) of_detect.open(data_outdir + "/of_detect.log");
 
         do {
           steady_end = std::chrono::steady_clock::now();
@@ -376,8 +380,10 @@ int main(int argc, char *argv[])
 
           if (det_image)
           {
-            if (det_types.size()) result_vec = detector.detect_resized_types(*det_image, frame_size.width, frame_size.height, det_types, thresh, true);  // true
-            else                  result_vec = detector.detect_resized(*det_image, frame_size.width, frame_size.height, thresh, true);
+            if (det_types.size()) 
+              result_vec = detector.detect_resized_types(*det_image, frame_size.width, frame_size.height, det_types, thresh, true);
+            else                  
+              result_vec = detector.detect_resized(*det_image, frame_size.width, frame_size.height, thresh, true);
           }
           fps_det_counter++;
           //std::this_thread::sleep_for(std::chrono::milliseconds(150));
