@@ -18,9 +18,23 @@ typedef enum
   TENTATIVE = 2,
 } track_state;
 
-////////// TRACK 
+////////// TRACK
 constexpr int default_max_age = 90;
 constexpr int default_n_init = 1;
+
+class dist
+{
+private:
+  double a, b;
+
+public:
+  dist(const double &a, const double &b) : a(a), b(b) {}
+  double operator()(const int &dx, const int &dy)
+  {
+    return std::sqrt(a*dx*dx + b*dy*dy);
+  }
+};
+
 
 struct track_t
 {
@@ -56,7 +70,7 @@ struct track_t
   void mark_missed()
   {
 //    std::cout << "dentro " << track_id << " " << state << std::endl;
-    if (this->state == track_state::TENTATIVE || this->time_since_update > this->max_age) 
+    if (this->state == track_state::TENTATIVE || this->time_since_update > this->max_age)
     {
 //      std::cout << "puzzammerda " << this->max_age << std::endl;
       this->state = track_state::DELETED;
@@ -72,8 +86,10 @@ public:
   std::vector<track_t> tracks;
   std::vector<std::pair<int, int>> matches_l;
   std::vector<int> unmatched_track_l;
+  dist d;
 
-  tracker_t(const int &frames_story, const int &max_dist_px) : frames_story(frames_story), max_dist_px(max_dist_px), n_trackid(0) {}
+  tracker_t(const int &frames_story, const int &max_dist_px, const std::vector<double> &dist_param) :
+    frames_story(frames_story), max_dist_px(max_dist_px), n_trackid(0), d(dist_param[0], dist_param[1]) {}
 
   void reset()
   {
@@ -104,11 +120,12 @@ public:
         int jj = detect_indices[j];
         float dx = (float)((tracks[ii].detection.back().x + tracks[ii].detection.back().w * 0.5) - (float)(detect[jj].x + detect[jj].w * 0.5));
         float dy = (float)((tracks[ii].detection.back().y + tracks[ii].detection.back().h * 0.5) - (float)(detect[jj].y + detect[jj].h * 0.5));
-        cost[i][j] = int(std::sqrt(dx*dx + dy*dy));
- 
-//        std::cout << i << " " << j << " " << ii << " " << jj << " | " << dx << " " << dy << " " << cost[i][j] << std::endl; 
-//        std::cout << tracks[ii].detection.back().x + tracks[ii].detection.back().w * 0.5 << " " << detect[jj].x + detect[jj].w * 0.5 << std::endl; 
-//        std::cout << tracks[ii].detection.back().x << " " << detect[jj].x << std::endl; 
+        cost[i][j] = int(d(dx, dy));
+        // cost[i][j] = int(std::sqrt(dx*dx + dy*dy));
+
+//        std::cout << i << " " << j << " " << ii << " " << jj << " | " << dx << " " << dy << " " << cost[i][j] << std::endl;
+//        std::cout << tracks[ii].detection.back().x + tracks[ii].detection.back().w * 0.5 << " " << detect[jj].x + detect[jj].w * 0.5 << std::endl;
+//        std::cout << tracks[ii].detection.back().x << " " << detect[jj].x << std::endl;
       }
     }
 //    Hungarian::PrintMatrix(cost);
@@ -122,11 +139,11 @@ public:
     //Hungarian::PrintMatrix(min.assignment);
 
     unmatched_det.clear();
-    for (int i = 0; i < N; ++i) 
+    for (int i = 0; i < N; ++i)
     {
       for (int j = 0; j < N; ++j)
       {
-        if (min.assignment[i][j] == 1) 
+        if (min.assignment[i][j] == 1)
         {
           if (i >= Ntrack) unmatched_det.push_back(detect_indices[j]);
           else if (j >= Ndet) unmatched_track_l.push_back(track_indices_l[i]);

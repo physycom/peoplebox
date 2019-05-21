@@ -56,6 +56,19 @@ std::vector<std::string> objects_names_from_file(std::string const filename) {
 }
 
 /////////////////////////////////// MAIN ///////////////////////////////////
+constexpr int SW_VER = 101;
+
+struct detection_data_t {
+  cv::Mat cap_frame;
+  std::shared_ptr<image_t> det_image;
+  std::vector<bbox_t> result_vec;
+  cv::Mat draw_frame;
+  bool new_detection;
+  uint64_t frame_id;
+  bool exit_flag;
+  detection_data_t() : exit_flag(false), new_detection(false) {}
+};
+
 template<typename T>
 class send_one_replaceable_object_t {
   const bool sync;
@@ -88,6 +101,63 @@ public:
   send_one_replaceable_object_t(bool _sync) : sync(_sync), a_ptr(NULL)
   {}
 };
+
+void cross_barriers(std::vector<fat_barrier> &barriers, tracker_t &tracker, const std::string &id_box, float &det_time, float &cap_time, const int &dump_rec_num, const std::string &data_outdir, const int &crossing_frame_num, jsoncons::json &crossing, const detection_data_t &detection_data)
+{
+  for (auto &b : barriers)
+    for (const auto &t : tracker.tracks)
+      b.crossing(t);
+
+  jsoncons::json jrecord;
+  auto tnow = std::time(0);
+  jrecord["timestamp"] = tnow;
+  jrecord["id_box"] = id_box;
+  jrecord["detection"] = "counting";
+  jrecord["sw_ver"] = SW_VER;
+
+  // collect multi-barrier results
+  jsoncons::json pplc = jsoncons::json::array();
+  jsoncons::json timec = jsoncons::json::array();
+  jsoncons::json j, tc;
+  for (auto &b : barriers)
+  {
+    j["id"] = b.name + "-in";
+    j["count"] = b.cnt_in;
+    pplc.push_back(j);
+    j["id"] = b.name + "-out";
+    j["count"] = b.cnt_out;
+    pplc.push_back(j);
+
+    b.reset();
+  }
+  tc["id"] = "det_mean_time";
+  tc["value"] = det_time / crossing_frame_num;
+  timec.push_back(tc);
+  tc["id"] = "cap_mean_time";
+  tc["value"] = cap_time / crossing_frame_num;
+  timec.push_back(tc);
+  det_time = 0.f;
+  cap_time = 0.f;
+
+  jrecord["people_count"] = pplc;
+  jrecord["diagnostic"] = timec;
+
+  std::stringstream ss;
+  ss << "frame_" << std::setw(6) << std::setfill('0') << detection_data.frame_id;
+  crossing[ss.str()] = jrecord;
+
+  if ( crossing.size() >= dump_rec_num )
+  {
+    std::ofstream pplc_out(data_outdir + "/" + id_box + "_" + std::to_string(tnow) + ".json");
+    if( !pplc_out ) throw std::runtime_error("Unable to create dump file.");
+    pplc_out << jsoncons::pretty_print(crossing) << std::endl;
+    pplc_out.close();
+    crossing.clear();
+  }
+
+  // clean up tracks
+  tracker.reset();
+}
 
 void usage(char * progname)
 {
@@ -124,7 +194,6 @@ void usage(char * progname)
 )";
 }
 
-constexpr int SW_VER = 101;
 
 int main(int argc, char *argv[])
 {
@@ -149,7 +218,8 @@ int main(int argc, char *argv[])
 
   // barrier crossing vars
   std::vector<fat_barrier> barriers;
-  int crossing_dt, crossing_frame_num, dump_dt, dump_rec_num;
+  std::vector<double> dist_param;
+  int crossing_dt, crossing_frame_num, dump_dt, dump_rec_num, max_dist_px;
   std::string data_outdir;
   jsoncons::json crossing;
   bool enable_barrier = false;
@@ -183,6 +253,10 @@ int main(int argc, char *argv[])
     // object types to detect
     if (jconf.has_member("object_types"))
       obj_types = jconf["object_types"].as<std::vector<std::string>>();
+
+    // distance parameters
+    dist_param = (jconf.has_member("dist_param")) ? jconf["dist_param"].as<std::vector<double>>() : std::vector<double>({1., 1.});
+    max_dist_px = (jconf.has_member("max_dist_px")) ? jconf["max_dist_px"].as<int>() : 120;
 
     // barrier parameters
     if (jconf.has_member("barriers"))
@@ -238,8 +312,7 @@ int main(int argc, char *argv[])
 
   // tracking vars
   int frame_story = 10;
-  int max_dist_px = 120;
-  tracker_t tracker(frame_story, max_dist_px);
+  tracker_t tracker(frame_story, max_dist_px, dist_param);
 
   try
   {
@@ -289,17 +362,6 @@ int main(int argc, char *argv[])
       if (enable_video_dump)
         out_video.open(out_videofile, CV_FOURCC('M', 'J', 'P', 'G'), std::max(35, video_fps), frame_size, true);
         //out_video.open(out_videofile, CV_FOURCC('D', 'I', 'V', 'X'), std::max(35, video_fps), frame_size, true);
-
-      struct detection_data_t {
-        cv::Mat cap_frame;
-        std::shared_ptr<image_t> det_image;
-        std::vector<bbox_t> result_vec;
-        cv::Mat draw_frame;
-        bool new_detection;
-        uint64_t frame_id;
-        bool exit_flag;
-        detection_data_t() : exit_flag(false), new_detection(false) {}
-      };
 
       const bool sync = detection_sync; // sync data exchange
       send_one_replaceable_object_t<detection_data_t> cap2prepare(sync), cap2draw(sync),
@@ -376,9 +438,9 @@ int main(int argc, char *argv[])
 
           if (det_image)
           {
-            if (det_types.size()) 
+            if (det_types.size())
               result_vec = detector.detect_resized(*det_image, frame_size.width, frame_size.height, det_types, thresh, true);
-            else                  
+            else
               result_vec = detector.detect_resized(*det_image, frame_size.width, frame_size.height, thresh, true);
           }
           fps_det_counter++;
@@ -433,61 +495,7 @@ int main(int argc, char *argv[])
 
           // barrier crossing
           if ( enable_barrier && (detection_data.frame_id % crossing_frame_num == 0) )
-          {
-            for (auto &b : barriers)
-              for (const auto &t : tracker.tracks)
-                b.crossing(t);
-
-            jsoncons::json jrecord;
-            auto tnow = std::time(0);
-            jrecord["timestamp"] = tnow;
-            jrecord["id_box"] = id_box;
-            jrecord["detection"] = "counting";
-            jrecord["sw_ver"] = SW_VER;
-
-            // collect multi-barrier results
-            jsoncons::json pplc = jsoncons::json::array();
-            jsoncons::json timec = jsoncons::json::array();
-            jsoncons::json j, tc;
-            for (auto &b : barriers)
-            {
-              j["id"] = b.name + "-in";
-              j["count"] = b.cnt_in;
-              pplc.push_back(j);
-              j["id"] = b.name + "-out";
-              j["count"] = b.cnt_out;
-              pplc.push_back(j);
-
-              b.reset();
-            }
-            tc["id"] = "det_mean_time";
-            tc["value"] = det_time / crossing_frame_num;
-            timec.push_back(tc);
-            tc["id"] = "cap_mean_time";
-            tc["value"] = cap_time / crossing_frame_num;
-            timec.push_back(tc);
-            det_time = 0.f;
-            cap_time = 0.f;
-
-            jrecord["people_count"] = pplc;
-            jrecord["diagnostic"] = timec;
-
-            std::stringstream ss;
-            ss << "frame_" << std::setw(6) << std::setfill('0') << detection_data.frame_id;
-            crossing[ss.str()] = jrecord;
-
-            if ( crossing.size() >= dump_rec_num )
-            {
-              std::ofstream pplc_out(data_outdir + "/" + id_box + "_" + std::to_string(tnow) + ".json");
-              if( !pplc_out ) throw std::runtime_error("Unable to create dump file.");
-              pplc_out << jsoncons::pretty_print(crossing) << std::endl;
-              pplc_out.close();
-              crossing.clear();
-            }
-
-            // clean up tracks
-            tracker.reset();
-          }
+            cross_barriers(barriers, tracker, id_box, det_time, cap_time, dump_rec_num, data_outdir, crossing_frame_num, crossing, detection_data);
 
           // decorate img
           draw_boxes(draw_frame, result_vec, obj_names, detection_data.frame_id, current_fps_det, current_fps_cap);
@@ -569,6 +577,7 @@ int main(int argc, char *argv[])
       std::cout << " show detection exit" << std::endl;
 
       if ( enable_opencv_show ) cv::destroyWindow("Tracking");
+      if ( enable_barrier ) cross_barriers(barriers, tracker, id_box, det_time, cap_time, 0, data_outdir, crossing_frame_num, crossing, detection_data);
 
       // wait for all threads
       if (t_cap.joinable()) t_cap.join();
