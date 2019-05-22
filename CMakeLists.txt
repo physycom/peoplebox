@@ -47,7 +47,7 @@ add_executable(demo ${CMAKE_SOURCE_DIR}/src/demo.cpp)
 set_target_properties(demo PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(demo PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/src> $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${Stb_INCLUDE_DIR}>)
 
-add_executable(scan ${CMAKE_SOURCE_DIR}/src/demo.cpp)
+add_executable(scan ${CMAKE_SOURCE_DIR}/src/scan.cpp)
 set_target_properties(scan PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(scan PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/src> $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${Stb_INCLUDE_DIR}>)
 
