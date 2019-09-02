@@ -45,20 +45,22 @@ install:
   - cd %VCPKG_ROOT%
   - git pull
   - .\bootstrap-vcpkg.bat
+  - echo set(VCPKG_BUILD_TYPE release) >> triplets\%VCPKG_DEFAULT_TRIPLET%.cmake
   - if [%USE_CUDA%]==[yes] vcpkg install cuda
-  - vcpkg install opencv[ffmpeg]  ## opencv[ffmpeg,cuda] is too big to build, timing out (>1h).
-  - vcpkg install jsoncons stb
-  - vcpkg install darknet[opencv]
+  - vcpkg install ffmpeg --recurse
+  - vcpkg install opencv[ffmpeg] --recurse ## opencv[ffmpeg,cuda] is too big to build, timing out (>1h).
+  - vcpkg install jsoncons stb --recurse
+  - vcpkg install darknet[opencv] --recurse
   - cd %WORKSPACE%\peoplebox\
-  - mkdir build_debug && cd build_debug
-  - if [%configuration%]==[Debug] cmake -G "Visual Studio 15 2017" -T "host=x64" -A "x64" "-DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" "-DVCPKG_TARGET_TRIPLET=%VCPKG_DEFAULT_TRIPLET%" -DCMAKE_BUILD_TYPE="Debug" ..
-  - cd ..
+    #- mkdir build_debug && cd build_debug
+    #- if [%configuration%]==[Debug] cmake -G "Visual Studio 15 2017" -T "host=x64" -A "x64" "-DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" "-DVCPKG_TARGET_TRIPLET=%VCPKG_DEFAULT_TRIPLET%" -DCMAKE_BUILD_TYPE="Debug" ..
+    #- cd ..
   - mkdir build_release && cd build_release
   - if [%configuration%]==[Release] cmake -G "Visual Studio 15 2017" -T "host=x64" -A "x64" "-DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" "-DVCPKG_TARGET_TRIPLET=%VCPKG_DEFAULT_TRIPLET%" -DCMAKE_BUILD_TYPE="Release" ..
   - cd ..
 
 build_script:
-  - if [%configuration%]==[Debug]   cd build_debug   && cmake --build . --config Debug --parallel 8 --target install   && cd ..
+        #- if [%configuration%]==[Debug]   cd build_debug   && cmake --build . --config Debug --parallel 8 --target install   && cd ..
   - if [%configuration%]==[Release] cd build_release && cmake --build . --config Release --parallel 8 --target install && cd ..
 
 artifacts:
