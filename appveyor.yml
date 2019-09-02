@@ -13,19 +13,7 @@ environment:
       USE_CUDA: yes
     - platform: Win64
       COMPILER: vs
-      configuration: Debug
-      VCPKG_ROOT: C:\Tools\vcpkg
-      VCPKG_DEFAULT_TRIPLET: x64-windows
-      USE_CUDA: yes
-    - platform: Win64
-      COMPILER: vs
       configuration: Release
-      VCPKG_ROOT: C:\Tools\vcpkg
-      VCPKG_DEFAULT_TRIPLET: x64-windows
-      USE_CUDA: no
-    - platform: Win64
-      COMPILER: vs
-      configuration: Debug
       VCPKG_ROOT: C:\Tools\vcpkg
       VCPKG_DEFAULT_TRIPLET: x64-windows
       USE_CUDA: no
