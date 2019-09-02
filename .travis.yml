@@ -50,10 +50,12 @@ install:
   - ./bootstrap-vcpkg.sh
   - echo "set(VCPKG_BUILD_TYPE release)" >> triplets/x64-osx.cmake
   - echo "set(VCPKG_BUILD_TYPE release)" >> triplets/x64-linux.cmake
+  - rm -rf buildtrees
   - travis_wait ./vcpkg install ffmpeg --recurse
   - travis_wait ./vcpkg install opencv[ffmpeg] --recurse
   - travis_wait ./vcpkg install jsoncons stb --recurse
   - travis_wait ./vcpkg install darknet[opencv] --recurse
+  - rm -rf buildtrees
   - popd
 
 before_script:
