@@ -69,8 +69,9 @@ struct detection_data_t {
   cv::Mat draw_frame;
   bool new_detection;
   uint64_t frame_id;
+  bool pending_crossing;
   bool exit_flag;
-  detection_data_t() : exit_flag(false), new_detection(false) {}
+  detection_data_t() : exit_flag(false), new_detection(false), pending_crossing(false) {}
 };
 
 template<typename T>
@@ -168,32 +169,51 @@ void usage(char * progname)
   std::string pname(progname);
   std::cerr << "Usage: " << pname.substr(pname.find_last_of("/\\") + 1) << " path/to/json/config" << std::endl;
   std::cerr << R"(Sample config JSON file
-{
-  "filename": "/path/to/video.avi",
-  "network": {
-    "file_names"   : "darknet/data/coco.names",
-    "file_cfg"     : "darknet/cfg/yolov3.cfg",
-    "file_weights" : "yolov3.weights",
-    "thresh"       : 0.5
-  },
-  "enable_barrier" : true,
-  "barriers" : {
-    "test_barrier" : {
-      "pnt_start" : [100, 100],
-      "pnt_end"   : [900, 900],
-      "thickness" : 10
-    }
-  },
-  "id_box"              : "MYBOX",
-  "crossing_dt"         : 3,
-  "dump_dt"             : 60,
-  "data_outdir"         : "data",
-  "image_dt"            : 300,
-  "image_outdir"        : "image",
-  "enable_opencv_show"  : true,
-  "enable_detection_cs" : true,
-  "enable_image_dump"   : true
-}
+  {
+    "network": {
+      "file_names"   : "darknet/data/coco.names",
+      "file_cfg"     : "darknet/cfg/yolov3.cfg",
+      "file_weights" : "darknet/yolov3.weights",
+      "thresh"       : 0.2
+    },
+    "cam_L"          : "camera_ip",
+    "cam_R"          : "camera_ip",
+    "undistort": {
+      "defish"       : false,
+      "matK"         : [1107.30569, 0.0, 654.301915, 0.0, 1115.39688, 364.01479, 0.0, 0.0, 1.0],
+      "matD"         : [-0.05071598, 0.02309643, -0.00413638, -0.14837196],
+      "balance"      : 0.8
+    },
+    "stitching": {
+      "try_cuda"        : true,
+      "conf_thresh"     : 1,
+      "match_conf"      : 0.3,
+      "matcher_type"    : "homography",
+      "estimator_type"  : "homography",
+      "ba_cost_func"    : "ray",
+      "ba_refine_mask"  : "xxxxx",
+      "wave_correct"    : "horiz",
+      "warp_type"       : "spherical",
+      "expos_comp_type" : "gain_blocks",
+      "seam_find_type"  : "gc_color",
+      "blend_type"      : "multiband",
+      "blend_strength"  : 5
+    },
+    "object_types"   : ["person"],
+    "dist_param"     : [1, 1],
+    "max_dist_px"    : 50,
+
+    "enable_barrier" : false,
+
+    "crossing_dt"    : 3,
+    "dump_dt"        : 3,
+    "id_box"         : "CAM",
+    "data_outdir"    : "C:/data_outdir",
+
+    "enable_opencv_show"   : true,
+    "enable_detection_csv" : false,
+    "enable_image_dump"    : false
+  }
 )";
 }
 
@@ -518,7 +538,7 @@ int main(int argc, char *argv[])
          throw std::runtime_error("Unable to open input video " + cam_L);
          return -1;
       }
-      std::cout << "Cam 1 init done...";
+      std::cout << "Cam 1 init done... ";
       if (!grab2.Init(cam_R))
       {
 #ifdef WIN32
@@ -527,13 +547,13 @@ int main(int argc, char *argv[])
          throw std::runtime_error("Unable to open input video " + cam_R);
          return -1;
       }
-      std::cout << "Cam 2 init done..." << std::endl;
+      std::cout << "Cam 2 init done... " << std::endl;
 
       std::thread t1(&GrabberThread::GrabThread, &grab1);
       std::thread t2(&GrabberThread::GrabThread, &grab2);
       std::size_t bufSize1, bufSize2;
 
-      // get first couple frames for setup
+      // get first couple frames for initial setup
       while (true) {
           grab1.PopFrame(frame1, &bufSize1);
           grab2.PopFrame(frame2, &bufSize2);
@@ -831,8 +851,11 @@ int main(int argc, char *argv[])
           //std::cout << "----------------------------------------------------" << std::endl << std::endl;
 
           // barrier crossing
-          if ( enable_barrier && (detection_data.frame_id % crossing_frame_num == 0) )
+          if ( enable_barrier && detection_data.pending_crossing )
+          {
             cross_barriers(barriers, tracker, id_box, det_time, cap_time, dump_rec_num, data_outdir, crossing_frame_num, crossing, detection_data);
+            detection_data.pending_crossing = false;
+          }
 
           // decorate img
           draw_boxes(draw_frame, result_vec, obj_names, detection_data.frame_id, current_fps_det, current_fps_cap);
@@ -875,12 +898,15 @@ int main(int argc, char *argv[])
 
           fps_cap_counter++;
           detection_data.frame_id = frame_id++;
+          if ( detection_data.frame_id % crossing_frame_num == 0 )
+            detection_data.pending_crossing = true;
           if (detection_data.cap_frame_L.empty() || detection_data.cap_frame_R.empty() || exit_flag) {
             std::cout << " exit_flag: detection_data.cap_frame_L.size = " << detection_data.cap_frame_L.size() << std::endl;
             std::cout << " exit_flag: detection_data.cap_frame_R.size = " << detection_data.cap_frame_R.size() << std::endl;
             detection_data.exit_flag = true;
             detection_data.cap_frame_L = cv::Mat(frame1.size(), CV_8UC3);
             detection_data.cap_frame_R = cv::Mat(frame2.size(), CV_8UC3);
+            break;
           }
           cap_time += std::chrono::duration<float>(std::chrono::steady_clock::now() - start_cap).count();
 
@@ -931,7 +957,7 @@ int main(int argc, char *argv[])
       // send one last time to make other threads exit
       cap2prepare.send(detection_data);
       detection_data = draw2show.receive();
-      std::cout << " show detection exit" << std::endl;
+      std::cout << " t_main exit" << std::endl;
 
       grab1.StopGrabbing();
       grab2.StopGrabbing();
