@@ -54,7 +54,7 @@ std::vector<std::string> objects_names_from_file(std::string const filename) {
   std::vector<std::string> file_lines;
   if (!file.is_open()) return file_lines;
   for (std::string line; getline(file, line);) file_lines.push_back(line);
-  std::cout << "object names loaded \n";
+  std::cout << " object names loaded \n";
   return file_lines;
 }
 
@@ -176,8 +176,8 @@ void usage(char * progname)
       "file_weights" : "darknet/yolov3.weights",
       "thresh"       : 0.2
     },
-    "cam_L"          : "ip_of_cam",
-    "cam_R"          : "ip_of_cam",
+    "cam_L"          : "video_source",
+    "cam_R"          : "video_source",
     "undistort": {
       "defish"       : false,
       "matK"         : [812.0087681176061, 0.0, 636.2192088627789, 0.0, 812.0185101863175, 346.088536349228, 0.0, 0.0, 1.0],
@@ -215,7 +215,7 @@ void usage(char * progname)
     "crossing_dt"    : 3,
     "dump_dt"        : 10,
     "id_box"         : "CAM",
-    "data_outdir"    : "D:/Alex/data",
+    "data_outdir"    : "C:/data_outdir",
 
     "enable_opencv_show"   : true,
     "enable_detection_csv" : false,
@@ -256,13 +256,15 @@ int main(int argc, char *argv[])
   cv::VideoWriter out_video;
   std::string out_videofile;
   std::string out_imagebase;
+  int64 app_start_time = cv::getTickCount();
+  int64 t = cv::getTickCount();
   bool enable_opencv_show = true;
   bool enable_detection_csv = false;
   bool enable_image_dump = false;
   bool enable_video_dump = false;
 
   // stitching vars
-  bool try_cuda, do_wave_correct, correct_fisheye, interactive_set, parameters_ok;
+  bool try_cuda, do_wave_correct, correct_fisheye, interactive_set, parameters_ok, using_videofile;
   float conf_thresh, match_conf, blend_strength;
   std::string matcher_type, estimator_type, ba_cost_func, ba_refine_mask, warp_type, seam_find_type, wave_correct_t, expos_comp_type, blend_type;
 
@@ -335,9 +337,6 @@ int main(int argc, char *argv[])
     blend_strength  = (jconf["stitching"].has_member("blend_strength"))  ? jconf["stitching"]["blend_strength"].as<float>()        : 5.0f;
 
     // debug parameters
-    out_videofile = cam_L + ".tracking.avi";
-    out_detfile = cam_L + ".det.csv";
-    out_imagebase = cam_L;
     enable_opencv_show   = (jconf.has_member("enable_opencv_show"))   ? jconf["enable_opencv_show"].as<bool>()   : false;
     enable_detection_csv = (jconf.has_member("enable_detection_csv")) ? jconf["enable_detection_csv"].as<bool>() : false;
     enable_image_dump    = (jconf.has_member("enable_image_dump"))    ? jconf["enable_image_dump"].as<bool>()    : false;
@@ -350,18 +349,17 @@ int main(int argc, char *argv[])
   }
 
   std::cout << "---------------------------- NETWORK ----------------------------" << std::endl;
+  t = cv::getTickCount();
   // detection vars
   p_detector detector(cfg_file, weights_file);
   auto obj_names = objects_names_from_file(names_file);
+  std::cout << "Network loaded in...                   time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
 
   // extract indices of desired detection object types
   std::vector<int> det_types;
   for(int i = 0; i < int(obj_names.size()); ++i)
     if ( std::any_of(obj_types.begin(), obj_types.end(), [i, obj_names](std::string s){ return obj_names[i] == s; }) )
       det_types.emplace_back(i);
-
-  // GUARDASELO PER BENISSIMO ***********
-  bool detection_sync = true;                // true - for video-file
 
   // tracking vars
   int frame_story = 10;
@@ -372,22 +370,30 @@ int main(int argc, char *argv[])
     preview_boxes_t large_preview(100, 150, false), small_preview(50, 50, true);
     bool show_small_boxes = false;
 
-    std::string const file_ext = cam_L.substr(cam_L.find_last_of(".") + 1);
-    std::string const protocol = cam_L.substr(0, 7);
-    if (file_ext == "avi" || file_ext == "mp4" || file_ext == "mjpg" || file_ext == "mov" ||     // video file
-      protocol == "rtmp://" || protocol == "rtsp://" || protocol == "http://" || protocol == "https:/"     // video network stream
-      )
+    std::string const file_ext_L = cam_L.substr(cam_L.find_last_of(".") + 1);
+    std::string const protocol_L = cam_L.substr(0, 7);
+    std::string const file_ext_R = cam_R.substr(cam_R.find_last_of(".") + 1);
+    std::string const protocol_R = cam_R.substr(0, 7);
+    if ((file_ext_L == "avi" || file_ext_L == "mp4" || file_ext_L == "mjpg" || file_ext_L == "mov" ||               // video file
+      protocol_L == "rtmp://" || protocol_L == "rtsp://" || protocol_L == "http://" || protocol_L == "https:/"      // video network stream
+      ) && (file_ext_R == "avi" || file_ext_R == "mp4" || file_ext_R == "mjpg" || file_ext_R == "mov" ||            // video file
+      protocol_R == "rtmp://" || protocol_R == "rtsp://" || protocol_R == "http://" || protocol_R == "https:/"))    // video network stream
     {
-      if (protocol == "rtsp://" || protocol == "http://" || protocol == "https:/" )
+      if ((protocol_L == "rtsp://" || protocol_L == "http://" || protocol_L == "https:/" ) && (protocol_R == "rtsp://" || protocol_R == "http://" || protocol_R == "https:/" ))
       {
-        detection_sync = true;
+        using_videofile = false;
         out_videofile = data_outdir + "/" + "video_stream.tracking.avi";
         out_detfile = data_outdir + "/" + "video_stream.det.csv";
         out_imagebase = data_outdir + "/" + "image_stream.";
       }
+      else
+      {
+        using_videofile = true;
+        out_videofile = cam_L + ".tracking.avi";
+        out_detfile = cam_L + ".det.csv";
+        out_imagebase = cam_L;
+      }
 
-      int64 app_start_time = cv::getTickCount();
-      int64 t = cv::getTickCount();
       GrabberThread grab1, grab2;
       std::atomic<int> fps_cap_counter(0), fps_det_counter(0);
       std::atomic<int> current_fps_cap(0), current_fps_det(0);
@@ -427,37 +433,37 @@ int main(int argc, char *argv[])
 
       // Check parsed arguments and set objects
       if (wave_correct_t == "no")
-          do_wave_correct = false;
+        do_wave_correct = false;
       else if (wave_correct_t == "horiz")
       {
-          do_wave_correct = true;
-          wave_correct = cv::detail::WAVE_CORRECT_HORIZ;
+        do_wave_correct = true;
+        wave_correct = cv::detail::WAVE_CORRECT_HORIZ;
       }
       else if (wave_correct_t == "vert")
       {
-          do_wave_correct = true;
-          wave_correct = cv::detail::WAVE_CORRECT_VERT;
+        do_wave_correct = true;
+        wave_correct = cv::detail::WAVE_CORRECT_VERT;
       }
       if (expos_comp_type == "no")
-          compensator = cv::detail::ExposureCompensator::createDefault(cv::detail::ExposureCompensator::NO);
+        compensator = cv::detail::ExposureCompensator::createDefault(cv::detail::ExposureCompensator::NO);
       else if (expos_comp_type == "gain")
-          compensator = cv::detail::ExposureCompensator::createDefault(cv::detail::ExposureCompensator::GAIN);
+        compensator = cv::detail::ExposureCompensator::createDefault(cv::detail::ExposureCompensator::GAIN);
       else if (expos_comp_type == "gain_blocks")
-          compensator = cv::detail::ExposureCompensator::createDefault(cv::detail::ExposureCompensator::GAIN_BLOCKS);
+        compensator = cv::detail::ExposureCompensator::createDefault(cv::detail::ExposureCompensator::GAIN_BLOCKS);
       if (blend_type == "no")
-          blender = cv::detail::Blender::createDefault(cv::detail::Blender::NO, try_cuda);
+        blender = cv::detail::Blender::createDefault(cv::detail::Blender::NO, try_cuda);
       else if (blend_type == "feather")
-          blender = cv::detail::Blender::createDefault(cv::detail::Blender::FEATHER, try_cuda);
+        blender = cv::detail::Blender::createDefault(cv::detail::Blender::FEATHER, try_cuda);
       else if (blend_type == "multiband")
-          blender = cv::detail::Blender::createDefault(cv::detail::Blender::MULTI_BAND, try_cuda);
+        blender = cv::detail::Blender::createDefault(cv::detail::Blender::MULTI_BAND, try_cuda);
       if (matcher_type == "affine")
-          matcher = cv::makePtr<cv::detail::AffineBestOf2NearestMatcher>(false, try_cuda, match_conf);
+        matcher = cv::makePtr<cv::detail::AffineBestOf2NearestMatcher>(false, try_cuda, match_conf);
       else
-          matcher = cv::makePtr<cv::detail::BestOf2NearestMatcher>(try_cuda, match_conf);
+        matcher = cv::makePtr<cv::detail::BestOf2NearestMatcher>(try_cuda, match_conf);
       if (estimator_type == "affine")
-          estimator = cv::makePtr<cv::detail::AffineBasedEstimator>();
+        estimator = cv::makePtr<cv::detail::AffineBasedEstimator>();
       else
-          estimator = cv::makePtr<cv::detail::HomographyBasedEstimator>();
+        estimator = cv::makePtr<cv::detail::HomographyBasedEstimator>();
       if (ba_cost_func == "reproj") adjuster = cv::makePtr<cv::detail::BundleAdjusterReproj>();
       else if (ba_cost_func == "ray") adjuster = cv::makePtr<cv::detail::BundleAdjusterRay>();
       else if (ba_cost_func == "affine") adjuster = cv::makePtr<cv::detail::BundleAdjusterAffinePartial>();
@@ -472,83 +478,85 @@ int main(int argc, char *argv[])
       adjuster->setRefinementMask(refine_mask);
       if (try_cuda && cv::cuda::getCudaEnabledDeviceCount() > 0)
       {
-          if (warp_type == "plane")
-              warper_creator = cv::makePtr<cv::PlaneWarperGpu>();
-          else if (warp_type == "cylindrical")
-              warper_creator = cv::makePtr<cv::CylindricalWarperGpu>();
-          else if (warp_type == "spherical")
-              warper_creator = cv::makePtr<cv::SphericalWarperGpu>();
+        if (warp_type == "plane")
+          warper_creator = cv::makePtr<cv::PlaneWarperGpu>();
+        else if (warp_type == "cylindrical")
+          warper_creator = cv::makePtr<cv::CylindricalWarperGpu>();
+        else if (warp_type == "spherical")
+          warper_creator = cv::makePtr<cv::SphericalWarperGpu>();
       }
       else
       {
-          if (warp_type == "plane")
-              warper_creator = cv::makePtr<cv::PlaneWarper>();
-          else if (warp_type == "affine")
-              warper_creator = cv::makePtr<cv::AffineWarper>();
-          else if (warp_type == "cylindrical")
-              warper_creator = cv::makePtr<cv::CylindricalWarper>();
-          else if (warp_type == "spherical")
-              warper_creator = cv::makePtr<cv::SphericalWarper>();
-          else if (warp_type == "fisheye")
-              warper_creator = cv::makePtr<cv::FisheyeWarper>();
-          else if (warp_type == "stereographic")
-              warper_creator = cv::makePtr<cv::StereographicWarper>();
-          else if (warp_type == "compressedPlaneA2B1")
-              warper_creator = cv::makePtr<cv::CompressedRectilinearWarper>(2.0f, 1.0f);
-          else if (warp_type == "compressedPlaneA1.5B1")
-              warper_creator = cv::makePtr<cv::CompressedRectilinearWarper>(1.5f, 1.0f);
-          else if (warp_type == "compressedPlanePortraitA2B1")
-              warper_creator = cv::makePtr<cv::CompressedRectilinearPortraitWarper>(2.0f, 1.0f);
-          else if (warp_type == "compressedPlanePortraitA1.5B1")
-              warper_creator = cv::makePtr<cv::CompressedRectilinearPortraitWarper>(1.5f, 1.0f);
-          else if (warp_type == "paniniA2B1")
-              warper_creator = cv::makePtr<cv::PaniniWarper>(2.0f, 1.0f);
-          else if (warp_type == "paniniA1.5B1")
-              warper_creator = cv::makePtr<cv::PaniniWarper>(1.5f, 1.0f);
-          else if (warp_type == "paniniPortraitA2B1")
-              warper_creator = cv::makePtr<cv::PaniniPortraitWarper>(2.0f, 1.0f);
-          else if (warp_type == "paniniPortraitA1.5B1")
-              warper_creator = cv::makePtr<cv::PaniniPortraitWarper>(1.5f, 1.0f);
-          else if (warp_type == "mercator")
-              warper_creator = cv::makePtr<cv::MercatorWarper>();
-          else if (warp_type == "transverseMercator")
-              warper_creator = cv::makePtr<cv::TransverseMercatorWarper>();
+        if (warp_type == "plane")
+          warper_creator = cv::makePtr<cv::PlaneWarper>();
+        else if (warp_type == "affine")
+          warper_creator = cv::makePtr<cv::AffineWarper>();
+        else if (warp_type == "cylindrical")
+          warper_creator = cv::makePtr<cv::CylindricalWarper>();
+        else if (warp_type == "spherical")
+          warper_creator = cv::makePtr<cv::SphericalWarper>();
+        else if (warp_type == "fisheye")
+          warper_creator = cv::makePtr<cv::FisheyeWarper>();
+        else if (warp_type == "stereographic")
+          warper_creator = cv::makePtr<cv::StereographicWarper>();
+        else if (warp_type == "compressedPlaneA2B1")
+          warper_creator = cv::makePtr<cv::CompressedRectilinearWarper>(2.0f, 1.0f);
+        else if (warp_type == "compressedPlaneA1.5B1")
+          warper_creator = cv::makePtr<cv::CompressedRectilinearWarper>(1.5f, 1.0f);
+        else if (warp_type == "compressedPlanePortraitA2B1")
+          warper_creator = cv::makePtr<cv::CompressedRectilinearPortraitWarper>(2.0f, 1.0f);
+        else if (warp_type == "compressedPlanePortraitA1.5B1")
+          warper_creator = cv::makePtr<cv::CompressedRectilinearPortraitWarper>(1.5f, 1.0f);
+        else if (warp_type == "paniniA2B1")
+          warper_creator = cv::makePtr<cv::PaniniWarper>(2.0f, 1.0f);
+        else if (warp_type == "paniniA1.5B1")
+          warper_creator = cv::makePtr<cv::PaniniWarper>(1.5f, 1.0f);
+        else if (warp_type == "paniniPortraitA2B1")
+          warper_creator = cv::makePtr<cv::PaniniPortraitWarper>(2.0f, 1.0f);
+        else if (warp_type == "paniniPortraitA1.5B1")
+          warper_creator = cv::makePtr<cv::PaniniPortraitWarper>(1.5f, 1.0f);
+        else if (warp_type == "mercator")
+          warper_creator = cv::makePtr<cv::MercatorWarper>();
+        else if (warp_type == "transverseMercator")
+          warper_creator = cv::makePtr<cv::TransverseMercatorWarper>();
       }
       if (!warper_creator)
       {
-          std::cout << "Can't create the following warper '" << warp_type << "'\n";
-          return 1;
+        std::cout << "Can't create the following warper '" << warp_type << "'\n";
+        return 1;
       }
       if (seam_find_type == "no")
-          seam_finder = cv::makePtr<cv::detail::NoSeamFinder>();
+        seam_finder = cv::makePtr<cv::detail::NoSeamFinder>();
       else if (seam_find_type == "voronoi")
-          seam_finder = cv::makePtr<cv::detail::VoronoiSeamFinder>();
+        seam_finder = cv::makePtr<cv::detail::VoronoiSeamFinder>();
       else if (seam_find_type == "gc_color")
       {
-          seam_finder = cv::makePtr<cv::detail::GraphCutSeamFinder>(cv::detail::GraphCutSeamFinderBase::COST_COLOR);
+        seam_finder = cv::makePtr<cv::detail::GraphCutSeamFinder>(cv::detail::GraphCutSeamFinderBase::COST_COLOR);
       }
       else if (seam_find_type == "gc_colorgrad")
       {
-          seam_finder = cv::makePtr<cv::detail::GraphCutSeamFinder>(cv::detail::GraphCutSeamFinderBase::COST_COLOR_GRAD);
+        seam_finder = cv::makePtr<cv::detail::GraphCutSeamFinder>(cv::detail::GraphCutSeamFinderBase::COST_COLOR_GRAD);
       }
       else if (seam_find_type == "dp_color")
-          seam_finder = cv::makePtr<cv::detail::DpSeamFinder>(cv::detail::DpSeamFinder::COLOR);
+        seam_finder = cv::makePtr<cv::detail::DpSeamFinder>(cv::detail::DpSeamFinder::COLOR);
       else if (seam_find_type == "dp_colorgrad")
-          seam_finder = cv::makePtr<cv::detail::DpSeamFinder>(cv::detail::DpSeamFinder::COLOR_GRAD);
+        seam_finder = cv::makePtr<cv::detail::DpSeamFinder>(cv::detail::DpSeamFinder::COLOR_GRAD);
       if (!seam_finder)
       {
-          std::cout << "Can't create the following seam finder '" << seam_find_type << "'\n";
-          return 1;
+        std::cout << "Can't create the following seam finder '" << seam_find_type << "'\n";
+        return 1;
       }
 
-      std::cout << std::endl << "/////////////////////////////////////////////////////////////////////////////" << std::endl;
+      std::cout << std::endl << "/////////////////////////////////////////////////////////////////" << std::endl;
       std::cout << " USAGE: Wait for the program to setup. If the stitching test shown is good enough, press SPACE." << std::endl;
       std::cout << " Otherwise press any other key or wait 5s to estimate stitching parameters again." << std::endl;
       std::cout << " [Only works in interactive mode. If interactive or CV show are off, the first parameters are saved]" << std::endl;
-      std::cout << "/////////////////////////////////////////////////////////////////////////////" << std::endl;
+      std::cout << "/////////////////////////////////////////////////////////////////" << std::endl << std::endl;
       std::cout << "----------------------------- SETUP -----------------------------" << std::endl;
       // start grabber threads
-      if (!grab1.Init(cam_L))
+      std::cout << "Opening cam_L...                       ";
+      t = cv::getTickCount();
+      if (!grab1.Init(cam_L, using_videofile))
       {
 #ifdef WIN32
          std::cerr << "Check that you have copied file opencv_ffmpeg3xx_64.dll to the same directory where is demo.exe" << std::endl;
@@ -556,8 +564,10 @@ int main(int argc, char *argv[])
          throw std::runtime_error("Unable to open input video " + cam_L);
          return -1;
       }
-      std::cout << "Cam 1 init done... ";
-      if (!grab2.Init(cam_R))
+      std::cout << "time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
+      std::cout << "Opening cam_R...                       ";
+      t = cv::getTickCount();
+      if (!grab2.Init(cam_R, using_videofile))
       {
 #ifdef WIN32
          std::cerr << "Check that you have copied file opencv_ffmpeg3xx_64.dll to the same directory where is demo.exe" << std::endl;
@@ -565,181 +575,180 @@ int main(int argc, char *argv[])
          throw std::runtime_error("Unable to open input video " + cam_R);
          return -1;
       }
-      std::cout << "Cam 2 init done... " << std::endl;
+      std::cout << "time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
 
       std::thread t1(&GrabberThread::GrabThread, &grab1);
       std::thread t2(&GrabberThread::GrabThread, &grab2);
       std::size_t bufSize1, bufSize2;
 
       do{
-          parameters_ok = true;
-          // get first couple frames for initial setup
-          while (true) {
-              grab1.PopFrame(frame1, &bufSize1);
-              grab2.PopFrame(frame2, &bufSize2);
+        parameters_ok = true;
+        // get first couple frames for initial setup
+        while (true) {
+          grab1.PopFrame(frame1, &bufSize1);
+          grab2.PopFrame(frame2, &bufSize2);
 
-              if (!frame1.empty() && !frame2.empty())
-              {
-                std::cout << "--------------- Calculating stitching parameters ----------------" << std::endl;
-                if (correct_fisheye)
-                {
-                  // correct camera fisheye (images must have same dimensions)
-                  cv::fisheye::estimateNewCameraMatrixForUndistortRectify(matK, matD, frame1.size(), cv::noArray(), newK, balance);
-                  cv::fisheye::initUndistortRectifyMap(matK, matD, cv::noArray(), newK, frame1.size(), CV_32F, mapx, mapy);
-                  cv::Mat m1, m2;
-                  cv::remap(frame1, m1, mapx, mapy, cv::INTER_CUBIC);
-                  cv::remap(frame2, m2, mapx, mapy, cv::INTER_CUBIC);
-                  images[0] = m1;
-                  images[1] = m2;
-                }
-                else{
-                  images[0] = frame1;
-                  images[1] = frame2;
-                }
+          if (!frame1.empty() && !frame2.empty())
+          {
+            std::cout << "            --- Calculating stitching parameters ---" << std::endl;
+            if (correct_fisheye)
+            {
+              // correct camera fisheye (images must have same dimensions)
+              cv::fisheye::estimateNewCameraMatrixForUndistortRectify(matK, matD, frame1.size(), cv::noArray(), newK, balance);
+              cv::fisheye::initUndistortRectifyMap(matK, matD, cv::noArray(), newK, frame1.size(), CV_32F, mapx, mapy);
+              cv::Mat m1, m2;
+              cv::remap(frame1, m1, mapx, mapy, cv::INTER_CUBIC);
+              cv::remap(frame2, m2, mapx, mapy, cv::INTER_CUBIC);
+              images[0] = m1;
+              images[1] = m2;
+            }
+            else{
+              images[0] = frame1;
+              images[1] = frame2;
+            }
 
-                t = cv::getTickCount();
-                for (int i = 0; i < 2; ++i)
-                {
-                    (*finder)(images[i], features[i]);
-                    features[i].img_idx = i;
-                    std::cout << "Features in image #" << i+1 << ": " << features[i].keypoints.size() << std::endl;
-                }
-                finder->collectGarbage();
-                std::cout << "Finding features...                  elapsed time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
-                std::cout << "Pairwise matching...                 ";
-                t = cv::getTickCount();
-                (*matcher)(features, pairwise_matches);
-                matcher->collectGarbage();
-                std::cout << "elapsed time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
+            t = cv::getTickCount();
+            std::cout << "Finding features...                    ";
+            for (int i = 0; i < 2; ++i)
+            {
+              (*finder)(images[i], features[i]);
+              features[i].img_idx = i;
+            }
+            finder->collectGarbage();
+            std::cout << "time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
 
-                std::cout << "Cameras parameter adjustments...     ";
-                t = cv::getTickCount();
-                if (!(*estimator)(features, pairwise_matches, cameras))
-                {
-                    std::cout << "Homography estimation failed. Retrying.\n";
-                    parameters_ok = false;
-                }
-                for (size_t i = 0; i < cameras.size(); ++i)
-                {
-                    cv::Mat R;
-                    cameras[i].R.convertTo(R, CV_32F);
-                    cameras[i].R = R;
-                }
-                if (!(*adjuster)(features, pairwise_matches, cameras))
-                {
-                    std::cout << "Camera parameters adjusting failed. Retrying.\n";
-                    parameters_ok = false;
-                }
-                for (size_t i = 0; i < cameras.size(); ++i)
-                {
-                    focals.push_back(cameras[i].focal);
-                }
-                sort(focals.begin(), focals.end());
-                warped_image_scale = static_cast<float>(focals[focals.size() / 2]);
-                if (do_wave_correct)
-                {
-                    std::vector<cv::Mat> rmats;
-                    for (size_t i = 0; i < cameras.size(); ++i)
-                        rmats.push_back(cameras[i].R.clone());
-                    waveCorrect(rmats, wave_correct);
-                    for (size_t i = 0; i < cameras.size(); ++i)
-                        cameras[i].R = rmats[i];
-                }
-                std::cout << "elapsed time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
+            std::cout << "Pairwise matching...                   ";
+            t = cv::getTickCount();
+            (*matcher)(features, pairwise_matches);
+            matcher->collectGarbage();
+            std::cout << "time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
 
-                std::cout << "Warping images...                    ";
-                t = cv::getTickCount();
-                for (int i = 0; i < 2; ++i)
-                {
-                    masks[i].create(images[i].size(), CV_8U);
-                    masks[i].setTo(cv::Scalar::all(255));
-                }
-                warper = warper_creator->create(static_cast<float>(warped_image_scale));
-                for (int i = 0; i < 2; ++i)
-                {
-                    cv::Mat_<float> K;
-                    cameras[i].K().convertTo(K, CV_32F);
-                    corners[i] = warper->warp(images[i], K, cameras[i].R, cv::INTER_LINEAR, cv::BORDER_REFLECT, images_warped[i]);
-                    sizes[i] = images_warped[i].size();
-                    warper->warp(masks[i], K, cameras[i].R, cv::INTER_NEAREST, cv::BORDER_CONSTANT, masks_warped[i]);
-                    images_warped[i].convertTo(images_warped_f[i], CV_32F);
-                }
-                std::cout << "elapsed time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
+            std::cout << "Cameras parameter adjustments...       ";
+            t = cv::getTickCount();
+            if (!(*estimator)(features, pairwise_matches, cameras))
+            {
+              std::cout << "Homography estimation failed. Retrying.\n";
+              parameters_ok = false;
+              break;
+            }
+            for (size_t i = 0; i < cameras.size(); ++i)
+            {
+              cv::Mat R;
+              cameras[i].R.convertTo(R, CV_32F);
+              cameras[i].R = R;
+            }
+            if (!(*adjuster)(features, pairwise_matches, cameras))
+            {
+              std::cout << "Camera parameters adjusting failed. Retrying.\n";
+              parameters_ok = false;
+              break;
+            }
+            for (size_t i = 0; i < cameras.size(); ++i)
+              focals.push_back(cameras[i].focal);
+            sort(focals.begin(), focals.end());
+            warped_image_scale = static_cast<float>(focals[focals.size() / 2]);
+            if (do_wave_correct)
+            {
+              std::vector<cv::Mat> rmats;
+              for (size_t i = 0; i < cameras.size(); ++i)
+                rmats.push_back(cameras[i].R.clone());
+              waveCorrect(rmats, wave_correct);
+              for (size_t i = 0; i < cameras.size(); ++i)
+                cameras[i].R = rmats[i];
+            }
+            std::cout << "time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
 
-                std::cout << "Compensator...                       ";
-                t = cv::getTickCount();
-                compensator->feed(corners, images_warped, masks_warped);
-                std::cout << "elapsed time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
+            std::cout << "Warping images...                      ";
+            t = cv::getTickCount();
+            for (int i = 0; i < 2; ++i)
+            {
+              masks[i].create(images[i].size(), CV_8U);
+              masks[i].setTo(cv::Scalar::all(255));
+            }
+            warper = warper_creator->create(static_cast<float>(warped_image_scale));
+            for (int i = 0; i < 2; ++i)
+            {
+              cv::Mat_<float> K;
+              cameras[i].K().convertTo(K, CV_32F);
+              corners[i] = warper->warp(images[i], K, cameras[i].R, cv::INTER_LINEAR, cv::BORDER_REFLECT, images_warped[i]);
+              sizes[i] = images_warped[i].size();
+              warper->warp(masks[i], K, cameras[i].R, cv::INTER_NEAREST, cv::BORDER_CONSTANT, masks_warped[i]);
+              images_warped[i].convertTo(images_warped_f[i], CV_32F);
+            }
+            std::cout << "time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
 
-                std::cout << "Seam finder...                       ";
-                t = cv::getTickCount();
-                seam_finder->find(images_warped_f, corners, masks_warped);
-                std::cout << "elapsed time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
+            std::cout << "Compensator...                         ";
+            t = cv::getTickCount();
+            compensator->feed(corners, images_warped, masks_warped);
+            std::cout << "time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
 
-                std::cout << "Blender ";
-                t = cv::getTickCount();
-                cv::Size dst_sz = cv::detail::resultRoi(corners, sizes).size();
-                float blend_width = std::sqrt(static_cast<float>(dst_sz.area())) * blend_strength / 100.f;
-                if (blend_width < 1.f)
-                    blender = cv::detail::Blender::createDefault(cv::detail::Blender::NO, try_cuda);
-                else if (blend_type == "multiband")
-                {
-                    cv::detail::MultiBandBlender* mb = dynamic_cast<cv::detail::MultiBandBlender*>(blender.get());
-                    mb->setNumBands(static_cast<int>(std::ceil(std::log(blend_width)/std::log(2.)) - 1.));
-                    std::cout << "MB(" << mb->numBands() << ")";
-                }
-                else if (blend_type == "feather")
-                {
-                    cv::detail::FeatherBlender* fb = dynamic_cast<cv::detail::FeatherBlender*>(blender.get());
-                    fb->setSharpness(1.f/blend_width);
-                    std::cout << "FB(" << fb->sharpness() << ")";
-                }
-                blender->prepare(corners, sizes);
-                std::cout << "...                     elapsed time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
+            std::cout << "Seam finder...                         ";
+            t = cv::getTickCount();
+            seam_finder->find(images_warped_f, corners, masks_warped);
+            std::cout << "time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
 
-                break; // exit from setup loop
-              }
-              else if (bufSize1 > 100 || bufSize2 > 100)
-              {
-                  std::cerr << "Can't get frames from camera" << std::endl;
-                  return -1;
-              }
+            std::cout << "Blender ";
+            t = cv::getTickCount();
+            cv::Size dst_sz = cv::detail::resultRoi(corners, sizes).size();
+            float blend_width = std::sqrt(static_cast<float>(dst_sz.area())) * blend_strength / 100.f;
+            if (blend_width < 1.f)
+              blender = cv::detail::Blender::createDefault(cv::detail::Blender::NO, try_cuda);
+            else if (blend_type == "multiband")
+            {
+              cv::detail::MultiBandBlender* mb = dynamic_cast<cv::detail::MultiBandBlender*>(blender.get());
+              mb->setNumBands(static_cast<int>(std::ceil(std::log(blend_width)/std::log(2.)) - 1.));
+              std::cout << "MB(" << mb->numBands() << ")";
+            }
+            else if (blend_type == "feather")
+            {
+              cv::detail::FeatherBlender* fb = dynamic_cast<cv::detail::FeatherBlender*>(blender.get());
+              fb->setSharpness(1.f/blend_width);
+              std::cout << "FB(" << fb->sharpness() << ")";
+            }
+            blender->prepare(corners, sizes);
+            std::cout << "...                       time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
+
+            break; // exit from setup loop
           }
-          if ( parameters_ok ){
-              // stitch the first two frames
-              cv::Mat img_warped, img_warped_s, result, result_mask, dilated_mask, seam_mask, mask, mask_warped, result8u;
-              cv::Size img_size = images[0].size();
-              for (int img_idx = 0; img_idx < 2; ++img_idx)
-              {
-                  cv::Mat K;
-                  cameras[img_idx].K().convertTo(K, CV_32F);
-                  warper->warp(images[img_idx], K, cameras[img_idx].R, cv::INTER_LINEAR, cv::BORDER_REFLECT, img_warped);
-                  mask.create(img_size, CV_8U);
-                  mask.setTo(cv::Scalar::all(255));
-                  warper->warp(mask, K, cameras[img_idx].R, cv::INTER_NEAREST, cv::BORDER_CONSTANT, mask_warped);
-                  compensator->apply(img_idx, corners[img_idx], img_warped, mask_warped);
-                  img_warped.convertTo(img_warped_s, CV_16S);
-                  img_warped.release();
-                  images[img_idx].release();
-                  mask.release();
-                  dilate(masks_warped[img_idx], dilated_mask, cv::Mat());
-                  resize(dilated_mask, seam_mask, mask_warped.size(), 0, 0, cv::INTER_LINEAR_EXACT);
-                  mask_warped = seam_mask & mask_warped;
-                  blender->feed(img_warped_s, mask_warped, corners[img_idx]);
-              }
-              blender->blend(result, result_mask);
-              result.convertTo(result8u, CV_8U);
-              stitched_size = result8u.size();
-
-              // show results and wait for confirmation key
-              if (enable_opencv_show) {
-                  cv::imshow("Tracking", result8u);
-                  int key = cv::waitKey(5000);    // wait 5 seconds for confirmation key
-                  if (key == 32) doing_setup = false; // SPACE
-              } else {
-                doing_setup = false;
-              }
+          else if (bufSize1 > 100 || bufSize2 > 100)
+          {
+            std::cerr << "Can't get frames from camera" << std::endl;
+            return -1;
           }
+        }
+        if ( parameters_ok ){
+          // stitch the first two frames
+          cv::Mat img_warped, img_warped_s, result, result_mask, dilated_mask, seam_mask, mask, mask_warped, result8u;
+          cv::Size img_size = images[0].size();
+          for (int img_idx = 0; img_idx < 2; ++img_idx)
+          {
+            cv::Mat K;
+            cameras[img_idx].K().convertTo(K, CV_32F);
+            warper->warp(images[img_idx], K, cameras[img_idx].R, cv::INTER_LINEAR, cv::BORDER_REFLECT, img_warped);
+            mask.create(img_size, CV_8U);
+            mask.setTo(cv::Scalar::all(255));
+            warper->warp(mask, K, cameras[img_idx].R, cv::INTER_NEAREST, cv::BORDER_CONSTANT, mask_warped);
+            compensator->apply(img_idx, corners[img_idx], img_warped, mask_warped);
+            img_warped.convertTo(img_warped_s, CV_16S);
+            img_warped.release();
+            images[img_idx].release();
+            mask.release();
+            dilate(masks_warped[img_idx], dilated_mask, cv::Mat());
+            resize(dilated_mask, seam_mask, mask_warped.size(), 0, 0, cv::INTER_LINEAR_EXACT);
+            mask_warped = seam_mask & mask_warped;
+            blender->feed(img_warped_s, mask_warped, corners[img_idx]);
+          }
+          blender->blend(result, result_mask);
+          result.convertTo(result8u, CV_8U);
+          stitched_size = result8u.size();
+
+          // show results and wait for confirmation key
+          if (enable_opencv_show) {
+            cv::imshow("Tracking", result8u);
+            int key = cv::waitKey(5000);    // wait 5 seconds for confirmation key
+            if (key == 32) doing_setup = false; // SPACE
+          } else           doing_setup = false;
+        }
       } while (doing_setup);
 
       // release unused memory
@@ -758,7 +767,7 @@ int main(int argc, char *argv[])
       if (enable_video_dump)
         out_video.open(out_videofile, CV_FOURCC('M', 'J', 'P', 'G'), std::max(35, video_fps), stitched_size, true);
 
-      const bool sync = detection_sync; // sync data exchange
+      const bool sync = true; // sync data exchange
       send_one_replaceable_object_t<detection_data_t> cap2prepare(sync), cap2draw(sync),
         prepare2detect(sync), detect2draw(sync), draw2show(sync), draw2write(sync), draw2net(sync);
 
@@ -793,30 +802,29 @@ int main(int argc, char *argv[])
 
           for (int img_idx = 0; img_idx < 2; ++img_idx)
           {
-              cv::Mat K;
-              cameras[img_idx].K().convertTo(K, CV_32F);
+            cv::Mat K;
+            cameras[img_idx].K().convertTo(K, CV_32F);
 
-              // Warp images
-              warper->warp(images[img_idx], K, cameras[img_idx].R, cv::INTER_LINEAR, cv::BORDER_REFLECT, img_warped);
-              mask.create(img_size, CV_8U);
-              mask.setTo(cv::Scalar::all(255));
-              warper->warp(mask, K, cameras[img_idx].R, cv::INTER_NEAREST, cv::BORDER_CONSTANT, mask_warped);
+            // Warp images
+            warper->warp(images[img_idx], K, cameras[img_idx].R, cv::INTER_LINEAR, cv::BORDER_REFLECT, img_warped);
+            mask.create(img_size, CV_8U);
+            mask.setTo(cv::Scalar::all(255));
+            warper->warp(mask, K, cameras[img_idx].R, cv::INTER_NEAREST, cv::BORDER_CONSTANT, mask_warped);
 
-              // Compensate exposure
-              compensator->apply(img_idx, corners[img_idx], img_warped, mask_warped);
+            // Compensate exposure
+            compensator->apply(img_idx, corners[img_idx], img_warped, mask_warped);
 
-              img_warped.convertTo(img_warped_s, CV_16S);
-              img_warped.release();
-              images[img_idx].release();
-              mask.release();
+            img_warped.convertTo(img_warped_s, CV_16S);
+            img_warped.release();
+            images[img_idx].release();
+            mask.release();
 
-              dilate(masks_warped[img_idx], dilated_mask, cv::Mat());
-              resize(dilated_mask, seam_mask, mask_warped.size(), 0, 0, cv::INTER_LINEAR_EXACT);
-              mask_warped = seam_mask & mask_warped;
+            dilate(masks_warped[img_idx], dilated_mask, cv::Mat());
+            resize(dilated_mask, seam_mask, mask_warped.size(), 0, 0, cv::INTER_LINEAR_EXACT);
+            mask_warped = seam_mask & mask_warped;
 
-              // Blend the current image
-              blender->feed(img_warped_s, mask_warped, corners[img_idx]);
-
+            // Blend the current image
+            blender->feed(img_warped_s, mask_warped, corners[img_idx]);
           }
 
           blender->blend(result, result_mask);
@@ -846,7 +854,6 @@ int main(int argc, char *argv[])
         detection_data_t detection_data;
 
         if ( enable_detection_csv ) out_detections.open(out_detfile);
-
         do {
           detection_data = prepare2detect.receive();
           start_det = std::chrono::steady_clock::now();
@@ -878,28 +885,7 @@ int main(int argc, char *argv[])
       {
         detection_data_t detection_data;
         do {
-
-          // for Video-file
-          if (detection_sync) {
-            detection_data = detect2draw.receive();
-          }
-          // for Video-camera
-          else
-          {
-            // get new Detection result if present
-            if (detect2draw.is_object_present()) {
-              cv::Mat old_cap_frame = detection_data.frame_stitched;   // use old captured frame
-              detection_data = detect2draw.receive();
-              if (!old_cap_frame.empty()) detection_data.frame_stitched = old_cap_frame;
-            }
-            // get new Captured frame
-            else {
-              std::vector<bbox_t> old_result_vec = detection_data.result_vec; // use old detections
-              detection_data = cap2draw.receive();
-              detection_data.result_vec = old_result_vec;
-            }
-          }
-
+          detection_data = detect2draw.receive();
           cv::Mat draw_frame = detection_data.frame_stitched;
           std::vector<bbox_t> result_vec = detection_data.result_vec;
 
@@ -969,7 +955,8 @@ int main(int argc, char *argv[])
           }
           cap_time += std::chrono::duration<float>(std::chrono::steady_clock::now() - start_cap).count();
 
-          if (bufSize1 < 50 && bufSize2 < 50){ // skip everything if buffer is getting too full
+          if ((bufSize1 < 50 && bufSize2 < 50) || using_videofile) // skip everything if buffer is getting too full. always process if elapsing a video
+          {
             cap2prepare.send(detection_data);
             detection_data = draw2show.receive();
             steady_end = std::chrono::steady_clock::now();
@@ -1032,18 +1019,23 @@ int main(int argc, char *argv[])
       if (t_draw.joinable()) t_draw.join();
       if (t_write.joinable()) t_write.join();
 
-      std::cout << "Flushing buffer1 of:" << grab1.GetBufSize() << " frames..." << std::endl;
-      std::cout << "Flushing buffer2 of:" << grab2.GetBufSize() << " frames..." << std::endl;
-      while (!(frame1.empty() && frame2.empty()))
+      if (!using_videofile)
       {
-        grab1.PopFrame(frame1);
-        grab2.PopFrame(frame2);
+        std::cout << "Flushing buffer1 of:" << grab1.GetBufSize() << " frames..." << std::endl;
+        std::cout << "Flushing buffer2 of:" << grab2.GetBufSize() << " frames..." << std::endl;
+        while (!(frame1.empty() && frame2.empty()))
+        {
+          grab1.PopFrame(frame1);
+          grab2.PopFrame(frame2);
+        }
       }
       std::cout << "--------------------------- STATISTICS --------------------------" << std::endl;
       grab1.PrintStats();
       grab2.PrintStats();
-      std::cout << "Finished...                          total time: " << ((cv::getTickCount() - app_start_time) / cv::getTickFrequency()) << " sec" << std::endl;
+      std::cout << "Finished...                      total time: " << ((cv::getTickCount() - app_start_time) / cv::getTickFrequency()) << " sec" << std::endl;
     }
+    else
+      std::cout << "ERROR: cam_L and cam_R must be either video streams or video files." << std::endl;
   }
   catch (std::exception &e)
   {
