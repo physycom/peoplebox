@@ -351,7 +351,11 @@ int main(int argc, char *argv[])
 #endif
         throw std::runtime_error("Unable to open input video: " + filename);
       }
-      video_fps = cap.get(CV_CAP_PROP_FPS);
+#if (CV_VERSION_MAJOR > 3)
+        video_fps = cap.get(cv::CAP_PROP_FPS);
+#else
+        video_fps = cap.get(CV_CAP_PROP_FPS);
+#endif
       crossing_frame_num = video_fps * crossing_dt;
       dump_rec_num =  int(dump_dt / float(crossing_dt));
       image_frame_num = video_fps * image_dt;
@@ -359,10 +363,15 @@ int main(int argc, char *argv[])
       cv::Size const frame_size = cur_frame.size();
       std::cout << "Video input: " << filename << "\nsize: " << frame_size << "  FPS: " << video_fps << std::endl;
 
-      if (enable_video_dump)
-        out_video.open(out_videofile, CV_FOURCC('M', 'J', 'P', 'G'), std::max(35, video_fps), frame_size, true);
-        //out_video.open(out_videofile, CV_FOURCC('D', 'I', 'V', 'X'), std::max(35, video_fps), frame_size, true);
-
+      if (enable_video_dump){
+#if (CV_VERSION_MAJOR > 3)
+          out_video.open(out_videofile, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), std::max(35, video_fps), frame_size, true);
+          //out_video.open(out_videofile, cv::VideoWriter::fourcc('D', 'I', 'V', 'X'), std::max(35, video_fps), frame_size, true);
+#else
+          out_video.open(out_videofile, CV_FOURCC('M', 'J', 'P', 'G'), std::max(35, video_fps), frame_size, true);
+          //out_video.open(out_videofile, CV_FOURCC('D', 'I', 'V', 'X'), std::max(35, video_fps), frame_size, true);
+#endif
+      }
       const bool sync = detection_sync; // sync data exchange
       send_one_replaceable_object_t<detection_data_t> cap2prepare(sync), cap2draw(sync),
         prepare2detect(sync), detect2draw(sync), draw2show(sync), draw2write(sync), draw2net(sync);

@@ -410,7 +410,11 @@ int main(int argc, char *argv[])
       cv::Matx33d matK(&vecK[0]);
       cv::Matx33d newK;
       cv::Matx41d matD(&vecD[0]);
+#if (CV_VERSION_MAJOR > 3)
+      cv::Ptr<cv::Feature2D> finder = cv::ORB::create();
+#else
       cv::Ptr<cv::detail::FeaturesFinder> finder = cv::makePtr<cv::detail::OrbFeaturesFinder>();
+#endif
       std::vector<cv::Mat> images(2);
       std::vector<cv::detail::ImageFeatures> features(2);
       std::vector<cv::detail::MatchesInfo> pairwise_matches;
@@ -609,12 +613,20 @@ int main(int argc, char *argv[])
 
             t = cv::getTickCount();
             std::cout << "Finding features...                    ";
+#if (CV_VERSION_MAJOR > 3)
+            for (int i = 0; i < 2; ++i)
+            {
+              computeImageFeatures(finder, images[i], features[i]);
+              features[i].img_idx = i;
+            }
+#else
             for (int i = 0; i < 2; ++i)
             {
               (*finder)(images[i], features[i]);
               features[i].img_idx = i;
             }
             finder->collectGarbage();
+#endif
             std::cout << "time: " << ((cv::getTickCount() - t) / cv::getTickFrequency()) << " sec" << std::endl;
 
             std::cout << "Pairwise matching...                   ";
@@ -758,14 +770,23 @@ int main(int argc, char *argv[])
       images_warped_f.clear();
       masks.clear();
 
+#if (CV_VERSION_MAJOR > 3)
+      video_fps = grab1.capGet(cv::CAP_PROP_FPS);
+      if(grab2.capGet(cv::CAP_PROP_FPS) != video_fps) throw std::runtime_error("Cameras don't have same FPS");
+#else
       video_fps = grab1.capGet(CV_CAP_PROP_FPS);
       if(grab2.capGet(CV_CAP_PROP_FPS) != video_fps) throw std::runtime_error("Cameras don't have same FPS");
+#endif
       crossing_frame_num = video_fps * crossing_dt;
       dump_rec_num =  int(dump_dt / float(crossing_dt));
       image_frame_num = video_fps * image_dt;
 
       if (enable_video_dump)
+#if (CV_VERSION_MAJOR > 3)
+        out_video.open(out_videofile, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), std::max(35, video_fps), stitched_size, true);
+#else
         out_video.open(out_videofile, CV_FOURCC('M', 'J', 'P', 'G'), std::max(35, video_fps), stitched_size, true);
+#endif
 
       const bool sync = true; // sync data exchange
       send_one_replaceable_object_t<detection_data_t> cap2prepare(sync), cap2draw(sync),

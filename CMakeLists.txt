@@ -18,7 +18,7 @@ foreach( OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES} )
 endforeach( OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES )
 
 #darknet deps
-include(darknet/CMakeLists.txt)
+find_package(Darknet)
 
 #if(CUDA_FOUND)
 #  list(APPEND linked_libs ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_curand_LIBRARY})
@@ -46,24 +46,26 @@ include_directories(${CMAKE_SOURCE_DIR}/jsoncons/include ${CMAKE_SOURCE_DIR}/src
 add_executable(demo ${CMAKE_SOURCE_DIR}/src/demo.cpp)
 set_target_properties(demo PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(demo PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/src> $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${Stb_INCLUDE_DIR}>)
+target_compile_definitions(demo PRIVATE -DUSE_CMAKE_LIBS)
 
 add_executable(doublecam ${CMAKE_SOURCE_DIR}/src/doublecam.cpp)
 set_target_properties(doublecam PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(doublecam PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/src> $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${Stb_INCLUDE_DIR}>)
+target_compile_definitions(doublecam PRIVATE -DUSE_CMAKE_LIBS)
 
 add_executable(scan ${CMAKE_SOURCE_DIR}/src/scan.cpp)
 set_target_properties(scan PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(scan PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include> $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/src> $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${Stb_INCLUDE_DIR}>)
-
+target_compile_definitions(scan PRIVATE -DUSE_CMAKE_LIBS)
 
 if(OpenCV_FOUND)
   target_link_libraries(demo PRIVATE ${OpenCV_LIBS})
   target_link_libraries(doublecam PRIVATE ${OpenCV_LIBS})
   target_link_libraries(scan PRIVATE ${OpenCV_LIBS})
 endif()
-target_link_libraries(demo PRIVATE darklib)
-target_link_libraries(doublecam PRIVATE darklib)
-target_link_libraries(scan PRIVATE darklib)
+target_link_libraries(demo PRIVATE Darknet::dark)
+target_link_libraries(doublecam PRIVATE Darknet::dark)
+target_link_libraries(scan PRIVATE Darknet::dark)
 
 install(TARGETS demo DESTINATION "${CMAKE_SOURCE_DIR}")
 install(TARGETS doublecam DESTINATION "${CMAKE_SOURCE_DIR}")
