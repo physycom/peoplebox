@@ -30,3 +30,10 @@ data/
 data
 *.avi
 *.mp4
+darktrack
+dump_frame
+dump_stream
+save_stream
+uselib
+uselib_track
+

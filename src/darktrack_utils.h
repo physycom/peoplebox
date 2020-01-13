@@ -1,5 +1,5 @@
 #include "common.h"
-#include "darknet.h"
+#include <darknet.h>
 
 #define MAX_FRAME_INFO_TO_STORE    10                        // size of json output
 #define MAX_LINE_LEN               20                        // static char buffer size

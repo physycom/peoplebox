@@ -54,7 +54,7 @@ install:
   - travis_wait ./vcpkg install ffmpeg --recurse
   - travis_wait ./vcpkg install opencv[ffmpeg] --recurse
   - travis_wait ./vcpkg install jsoncons stb --recurse
-  - travis_wait ./vcpkg install darknet[opencv] --recurse
+  - travis_wait ./vcpkg install darknet[opencv-base] --recurse
   - rm -rf buildtrees
   - popd
 
