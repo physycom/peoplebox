@@ -36,6 +36,7 @@ install:
   - echo set(VCPKG_BUILD_TYPE release) >> triplets\%VCPKG_DEFAULT_TRIPLET%.cmake
   - if [%USE_CUDA%]==[yes] vcpkg install cuda
   - vcpkg install ffmpeg --recurse
+  - vcpkg remove darknet
   - vcpkg install opencv[ffmpeg] --recurse ## opencv[ffmpeg,cuda] is too big to build, timing out (>1h).
   - vcpkg install jsoncons stb pthreads --recurse
   - vcpkg install darknet[opencv-base] --recurse
