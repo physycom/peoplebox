@@ -30,6 +30,8 @@ if [[ $(hostname) == *"jetson"* ]]; then
   additional_defines="${additional_defines} -DOVERRIDE_GCC_OPTIM=-ffp-contract=fast"
 fi
 
+
+additional_defines="${additional_defines} -DDarknet_DIR=${WORKSPACE}/darknet/share/darknet"
 mkdir -p $build_dir
 cd $build_dir
 cmake .. -DCMAKE_BUILD_TYPE=Release ${additional_defines}

@@ -480,6 +480,7 @@ int main(int argc, char *argv[])
       if (ba_refine_mask[3] == 'x') refine_mask(1,1) = 1;
       if (ba_refine_mask[4] == 'x') refine_mask(1,2) = 1;
       adjuster->setRefinementMask(refine_mask);
+ #ifdef HAVE_OPENCV_CUDAWARPING
       if (try_cuda && cv::cuda::getCudaEnabledDeviceCount() > 0)
       {
         if (warp_type == "plane")
@@ -490,6 +491,7 @@ int main(int argc, char *argv[])
           warper_creator = cv::makePtr<cv::SphericalWarperGpu>();
       }
       else
+ #endif
       {
         if (warp_type == "plane")
           warper_creator = cv::makePtr<cv::PlaneWarper>();
