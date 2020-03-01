@@ -1,9 +1,11 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cstdio>
+#include <cstdlib>
+#include <string>
+#include <ctime>
 
 #include "darktrack_utils.h"
+
+using namespace std;
 
 static char** demo_names;
 static int demo_classes;
@@ -299,10 +301,10 @@ void* pb_detect_in_thread(void* ptr)
 int main()
 {
   int i;
-  char* cfg = "darknet/cfg/yolov3.cfg";
-  char* weights = "darknet/yolov3.weights";
-  char* filename = "@CAMERA_PROTOCOL@@CAMERA_CREDENTIALS@@CAMERA_IP@@CAMERA_FEED_ADDRESS@";
-  char* name_list = "darknet/data/coco.names";
+  string cfg = "darknet/cfg/yolov3.cfg";
+  string weights = "darknet/yolov3.weights";
+  string filename = "@CAMERA_PROTOCOL@@CAMERA_CREDENTIALS@@CAMERA_IP@@CAMERA_FEED_ADDRESS@";
+  string name_list = "darknet/data/coco.names";
 
   srand(12345);
 
@@ -311,7 +313,7 @@ int main()
   /* prepare frame info array */
   infos = (frame_info*)calloc(MAX_FRAME_INFO_TO_STORE, sizeof(frame_info));
 
-  FILE* file = fopen(name_list, "r");
+  FILE* file = fopen(name_list.c_str(), "r");
   if (!file) {
     MESSAGE_ERR("cannot open: %s", name_list);
     exit(ERR_NO_FILE);

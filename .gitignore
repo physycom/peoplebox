@@ -30,3 +30,8 @@ data/
 data
 *.avi
 *.mp4
+
+darktrack
+dump_frame
+save_stream
+dump_stream
